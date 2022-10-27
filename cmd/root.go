@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/miquelruiz/youtube-rss-subscriber-go/schema"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +24,7 @@ var (
 )
 
 func Execute() error {
-	db, err := sql.Open("sqlite3", "yrs.db")
+	db, err := schema.NewSchema("yrs.db")
 	if err != nil {
 		return fmt.Errorf("couldn't open the database: %w", err)
 	}

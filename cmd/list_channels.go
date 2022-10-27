@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -21,26 +20,19 @@ var listChannelsCmd = &cobra.Command{
 }
 
 func listChannels(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
-	db := ctx.Value(DbKey).(*sql.DB)
-	rows, err := db.Query("SELECT * FROM channels")
-	if err != nil {
-		return fmt.Errorf("couldn't retrieve the channels: %w", err)
-	}
-	defer rows.Close()
+	db := cmd.Context().Value(DbKey).(*schema.Schema)
 
 	w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', 0)
-	fmt.Fprintln(w, "ID\tName\tURL\tAutodownload")
-	for rows.Next() {
-		c := schema.Channel{}
-		err = rows.Scan(&c.ID, &c.URL, &c.Name, &c.RSS, &c.Autodownload)
-		if err != nil {
-			return fmt.Errorf("scan failed: %w", err)
-		}
+	defer w.Flush()
 
+	fmt.Fprintln(w, "ID\tName\tURL\tAutodownload")
+	err := db.ForEachChannel(func(c schema.Channel) {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%t\t\n", c.ID, c.Name, c.URL, c.Autodownload)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to list channels: %w", err)
 	}
 
-	w.Flush()
 	return nil
 }
