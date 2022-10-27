@@ -6,7 +6,6 @@ import (
 	"os"
 	"text/tabwriter"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/miquelruiz/youtube-rss-subscriber-go/schema"
 	"github.com/spf13/cobra"
 )
@@ -22,11 +21,8 @@ var listChannelsCmd = &cobra.Command{
 }
 
 func listChannels(cmd *cobra.Command, args []string) error {
-	db, err := sql.Open("sqlite3", "yrs.db")
-	if err != nil {
-		return fmt.Errorf("couldn't open the database: %w", err)
-	}
-
+	ctx := cmd.Context()
+	db := ctx.Value(DbKey).(*sql.DB)
 	rows, err := db.Query("SELECT * FROM channels")
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve the channels: %w", err)
