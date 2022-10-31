@@ -17,6 +17,6 @@ type Video struct {
 	URL        string
 	Title      string
 	Published  time.Time
-	Channel_id string
+	ChannelId  string
 	Downloaded bool
 }

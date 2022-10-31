@@ -6,7 +6,7 @@ import (
 )
 
 type Schema struct {
-	db *sql.DB
+	Db *sql.DB
 }
 
 func NewSchema(dsn string) (*Schema, error) {
@@ -18,7 +18,7 @@ func NewSchema(dsn string) (*Schema, error) {
 }
 
 func (s *Schema) ForEachChannel(f func(Channel)) error {
-	rows, err := s.db.Query("SELECT * FROM channels")
+	rows, err := s.Db.Query("SELECT * FROM channels")
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve the channels: %w", err)
 	}
