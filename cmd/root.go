@@ -24,7 +24,12 @@ var (
 )
 
 func Execute() error {
-	db, err := schema.NewSchema("yrs.db")
+	c, err := loadConfig()
+	if err != nil {
+		return err
+	}
+
+	db, err := schema.NewSchema(c.DatabaseUrl)
 	if err != nil {
 		return fmt.Errorf("couldn't open the database: %w", err)
 	}

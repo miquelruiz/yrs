@@ -6,6 +6,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/mmcdole/gofeed v1.1.3
 	github.com/spf13/cobra v1.6.1
+	gopkg.in/yaml.v2 v2.2.2
 )
 
 require (
