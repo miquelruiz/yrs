@@ -16,24 +16,44 @@ const (
 )
 
 var (
-	rootCmd = &cobra.Command{
+	ConfigPath string
+	rootCmd    = &cobra.Command{
 		Use:   "yrs",
 		Short: "YouTube RSS Subscriber",
 		Long:  "A tool to subscribe to YouTube channels without a YouTube account",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			c, err := loadConfig(ConfigPath)
+			if err != nil {
+				return fmt.Errorf(
+					"couldn't load the config file %s: %w",
+					ConfigPath,
+					err,
+				)
+			}
+
+			db, err := schema.NewSchema(c.DatabaseUrl)
+			if err != nil {
+				return fmt.Errorf("couldn't open the database: %w", err)
+			}
+
+			ctx := context.WithValue(cmd.Context(), DbKey, db)
+			cmd.SetContext(ctx)
+
+			return nil
+		},
 	}
 )
 
+func init() {
+	rootCmd.PersistentFlags().StringVarP(
+		&ConfigPath,
+		"config",
+		"c",
+		"",
+		"Path to config file",
+	)
+}
+
 func Execute() error {
-	c, err := loadConfig()
-	if err != nil {
-		return err
-	}
-
-	db, err := schema.NewSchema(c.DatabaseUrl)
-	if err != nil {
-		return fmt.Errorf("couldn't open the database: %w", err)
-	}
-
-	ctx := context.WithValue(context.Background(), DbKey, db)
-	return rootCmd.ExecuteContext(ctx)
+	return rootCmd.ExecuteContext(context.Background())
 }

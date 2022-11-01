@@ -7,29 +7,38 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/miquelruiz/youtube-rss-subscriber-go/schema"
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	defaultPath string = ".yrs/config.yml"
+	defaultPath   string = ".yrs"
+	defaultName   string = "config.yml"
+	defaultDbName string = "yrs.db"
 )
 
 type Config struct {
 	DatabaseUrl string `yaml:"database_url"`
 }
 
-func loadConfig() (*Config, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
+func loadConfig(configPath string) (*Config, error) {
+	mayInitConfig := false
+	if configPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, err
+		}
+		configPath = filepath.Join(home, defaultPath, defaultName)
+		mayInitConfig = true
 	}
 
 	tries := 0
+
 OPEN:
-	f, err := os.Open(filepath.Join(home, defaultPath))
+	f, err := os.Open(configPath)
 	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) && tries == 0 {
-			if err := initializeConfig(); err != nil {
+		if errors.Is(err, fs.ErrNotExist) && tries == 0 && mayInitConfig {
+			if err := initializeConfig(configPath); err != nil {
 				return nil, err
 			}
 			tries++
@@ -47,18 +56,23 @@ OPEN:
 	return &config, nil
 }
 
-func initializeConfig() error {
+func initializeConfig(configPath string) error {
+	fmt.Printf("Initializing config in %s\n", configPath)
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
-
-	c := Config{DatabaseUrl: fmt.Sprintf("file:%s/.yrs/yrs.db", home)}
-	f, err := os.OpenFile(
-		filepath.Join(home, defaultPath),
-		os.O_CREATE|os.O_RDWR,
-		0644,
-	)
+	dbDir := filepath.Join(home, defaultPath)
+	_, err = os.Stat(dbDir)
+	if err != nil {
+		if err := os.Mkdir(dbDir, 0750); err != nil {
+			return err
+		}
+	}
+	fullDbPath := filepath.Join(dbDir, defaultDbName)
+	dsn := fmt.Sprintf("file:%s", fullDbPath)
+	c := Config{DatabaseUrl: dsn}
+	f, err := os.OpenFile(configPath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
@@ -67,5 +81,6 @@ func initializeConfig() error {
 		return err
 	}
 
-	return nil
+	err = schema.InitializeDb(dsn)
+	return err
 }

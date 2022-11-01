@@ -1,3 +1,4 @@
 *.db
+config.yml
 yrs
 youtube-rss-subscriber-go
