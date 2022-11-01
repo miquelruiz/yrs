@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"gopkg.in/yaml.v2"
@@ -20,14 +19,14 @@ type Config struct {
 }
 
 func loadConfig() (*Config, error) {
-	usr, err := user.Current()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
 
 	tries := 0
 OPEN:
-	f, err := os.Open(filepath.Join(usr.HomeDir, defaultPath))
+	f, err := os.Open(filepath.Join(home, defaultPath))
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) && tries == 0 {
 			if err := initializeConfig(); err != nil {
@@ -49,14 +48,14 @@ OPEN:
 }
 
 func initializeConfig() error {
-	usr, err := user.Current()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
-	c := Config{DatabaseUrl: fmt.Sprintf("file:%s/.yrs/yrs.db", usr.HomeDir)}
+	c := Config{DatabaseUrl: fmt.Sprintf("file:%s/.yrs/yrs.db", home)}
 	f, err := os.OpenFile(
-		filepath.Join(usr.HomeDir, defaultPath),
+		filepath.Join(home, defaultPath),
 		os.O_CREATE|os.O_RDWR,
 		0644,
 	)
