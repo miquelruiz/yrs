@@ -73,6 +73,25 @@ func (s *Schema) ForEachChannel(f func(*Channel)) error {
 	return nil
 }
 
+func (s *Schema) ForEachVideo(f func(*Video)) error {
+	rows, err := s.Db.Query("SELECT * FROM videos")
+	if err != nil {
+		return fmt.Errorf("couldn't retrieve the videos: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		v := Video{}
+		err = rows.Scan(&v.ID, &v.Title, &v.URL, &v.Published, &v.ChannelId, &v.Downloaded)
+		if err != nil {
+			return fmt.Errorf("scan failed: %w", err)
+		}
+		f(&v)
+	}
+
+	return nil
+}
+
 func InitializeDb(dsn string) error {
 	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
