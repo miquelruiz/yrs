@@ -26,7 +26,7 @@ func listChannels(cmd *cobra.Command, args []string) error {
 	defer w.Flush()
 
 	fmt.Fprintln(w, "ID\tName\tURL\tAutodownload")
-	err := db.ForEachChannel(func(c schema.Channel) {
+	err := db.ForEachChannel(func(c *schema.Channel) {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%t\t\n", c.ID, c.Name, c.URL, c.Autodownload)
 	})
 

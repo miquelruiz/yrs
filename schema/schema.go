@@ -54,7 +54,7 @@ func NewSchema(dsn string) (*Schema, error) {
 	return &Schema{db}, nil
 }
 
-func (s *Schema) ForEachChannel(f func(Channel)) error {
+func (s *Schema) ForEachChannel(f func(*Channel)) error {
 	rows, err := s.Db.Query("SELECT * FROM channels")
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve the channels: %w", err)
@@ -67,7 +67,7 @@ func (s *Schema) ForEachChannel(f func(Channel)) error {
 		if err != nil {
 			return fmt.Errorf("scan failed: %w", err)
 		}
-		f(c)
+		f(&c)
 	}
 
 	return nil
@@ -84,4 +84,17 @@ func InitializeDb(dsn string) error {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
 	return nil
+}
+
+func (s *Schema) InsertChannel(c Channel) error {
+	insert, err := s.Db.Prepare(`
+		INSERT INTO channels (id, url, name, rss, autodownload)
+		VALUES (?, ?, ?, ?, 0)
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = insert.Exec(c.ID, c.URL, c.Name, c.RSS)
+	return err
 }
