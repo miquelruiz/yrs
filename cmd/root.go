@@ -33,7 +33,7 @@ var (
 
 			db, err := schema.NewSchema(c.DatabaseUrl)
 			if err != nil {
-				return fmt.Errorf("couldn't open the database: %w", err)
+				return fmt.Errorf("couldn't create schema: %w", err)
 			}
 
 			ctx := context.WithValue(cmd.Context(), DbKey, db)

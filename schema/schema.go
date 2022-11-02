@@ -2,7 +2,11 @@ package schema
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
+	"strings"
 )
 
 type Schema struct {
@@ -36,6 +40,17 @@ func NewSchema(dsn string) (*Schema, error) {
 	if err != nil {
 		return nil, fmt.Errorf("couldn't open the database: %w", err)
 	}
+	dbPath := strings.TrimPrefix(dsn, "file:")
+	fileinfo, err := os.Stat(dbPath)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, fmt.Errorf("couldn't stat the db '%s': %w", dbPath, err)
+		}
+		InitializeDb(dsn)
+	} else if fileinfo.Size() == 0 {
+		InitializeDb(dsn)
+	}
+
 	return &Schema{db}, nil
 }
 
@@ -59,11 +74,12 @@ func (s *Schema) ForEachChannel(f func(Channel)) error {
 }
 
 func InitializeDb(dsn string) error {
-	s, err := NewSchema(dsn)
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to create database: %w", err)
 	}
-	_, err = s.Db.Exec(initStmt)
+
+	_, err = db.Exec(initStmt)
 	if err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
