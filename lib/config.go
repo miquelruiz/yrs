@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ type Config struct {
 	DatabaseUrl    string `yaml:"database_url"`
 }
 
-func loadConfig(configPath string) (*Config, error) {
+func LoadConfig(configPath string) (*Config, error) {
 	mayInitConfig := false
 	if configPath == "" {
 		home, err := os.UserHomeDir()

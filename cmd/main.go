@@ -6,8 +6,10 @@ import (
 	"os"
 	"text/tabwriter"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/miquelruiz/yrs/lib"
+	"github.com/miquelruiz/yrs/yrs"
+
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +26,7 @@ var (
 		Short: "YouTube RSS Subscriber",
 		Long:  "A tool to subscribe to YouTube channels without a YouTube account",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			c, err := loadConfig(ConfigPath)
+			c, err := lib.LoadConfig(ConfigPath)
 			if err != nil {
 				return fmt.Errorf(
 					"couldn't load the config file %s: %w",
@@ -33,7 +35,7 @@ var (
 				)
 			}
 
-			db, err := lib.New(c.DatabaseDriver, c.DatabaseUrl)
+			db, err := yrs.New(c.DatabaseDriver, c.DatabaseUrl)
 			if err != nil {
 				return fmt.Errorf("couldn't create schema: %w", err)
 			}
@@ -49,7 +51,7 @@ var (
 		Use:   "update",
 		Short: "Update subscriptions",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			yrs := cmd.Context().Value(AppKey).(*lib.Yrs)
+			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
 			return yrs.Update()
 		},
 	}
@@ -59,7 +61,7 @@ var (
 		Short: "Subscribe to the given channel",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			yrs := cmd.Context().Value(AppKey).(*lib.Yrs)
+			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
 			return yrs.Subscribe(args[0])
 		},
 	}
@@ -68,7 +70,7 @@ var (
 		Use:   "list-videos",
 		Short: "List all the videos in the database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			yrs := cmd.Context().Value(AppKey).(*lib.Yrs)
+			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
 			videos, err := yrs.GetVideos()
 			if err != nil {
 				return err
@@ -101,7 +103,7 @@ var (
 		Use:   "list-channels",
 		Short: "List all the subscribed channels",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			yrs := cmd.Context().Value(AppKey).(*lib.Yrs)
+			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
 			channels, err := yrs.GetChannels()
 			if err != nil {
 				return err
