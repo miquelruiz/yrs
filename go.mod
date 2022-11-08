@@ -1,4 +1,4 @@
-module github.com/miquelruiz/youtube-rss-subscriber-go
+module github.com/miquelruiz/yrs
 
 go 1.19
 

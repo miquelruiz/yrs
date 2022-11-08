@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/miquelruiz/youtube-rss-subscriber-go/schema"
+	"github.com/miquelruiz/yrs/schema"
 	"github.com/spf13/cobra"
 )
 

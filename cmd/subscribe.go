@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/miquelruiz/youtube-rss-subscriber-go/schema"
+	"github.com/miquelruiz/yrs/schema"
 	"github.com/mmcdole/gofeed"
 	"github.com/spf13/cobra"
 )

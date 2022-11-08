@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/mattn/go-sqlite3"
-	"github.com/miquelruiz/youtube-rss-subscriber-go/schema"
+	"github.com/miquelruiz/yrs/schema"
 	"github.com/mmcdole/gofeed"
 	"github.com/spf13/cobra"
 )

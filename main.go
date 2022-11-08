@@ -1,6 +1,6 @@
 package main
 
-import "github.com/miquelruiz/youtube-rss-subscriber-go/cmd"
+import "github.com/miquelruiz/yrs/cmd"
 
 func main() {
 	if err := cmd.Execute(); err != nil {

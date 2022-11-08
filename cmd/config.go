@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/miquelruiz/youtube-rss-subscriber-go/schema"
+	"github.com/miquelruiz/yrs/schema"
 	"gopkg.in/yaml.v2"
 )
 
