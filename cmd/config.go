@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/miquelruiz/yrs/schema"
 	"gopkg.in/yaml.v2"
 )
 
@@ -18,7 +17,8 @@ const (
 )
 
 type Config struct {
-	DatabaseUrl string `yaml:"database_url"`
+	DatabaseDriver string `yaml:"database_driver"`
+	DatabaseUrl    string `yaml:"database_url"`
 }
 
 func loadConfig(configPath string) (*Config, error) {
@@ -70,8 +70,10 @@ func initializeConfig(configPath string) error {
 		}
 	}
 	fullDbPath := filepath.Join(dbDir, defaultDbName)
-	dsn := fmt.Sprintf("file:%s", fullDbPath)
-	c := Config{DatabaseUrl: dsn}
+	c := Config{
+		DatabaseDriver: "sqlite3",
+		DatabaseUrl:    fmt.Sprintf("file:%s", fullDbPath),
+	}
 	f, err := os.OpenFile(configPath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
@@ -81,6 +83,5 @@ func initializeConfig(configPath string) error {
 		return err
 	}
 
-	err = schema.InitializeDb(dsn)
 	return err
 }
