@@ -6,6 +6,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/mmcdole/gofeed v1.1.3
 	github.com/spf13/cobra v1.6.1
+	golang.org/x/net v0.2.0
 	gopkg.in/yaml.v2 v2.2.2
 )
 
@@ -18,6 +19,5 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/text v0.4.0 // indirect
 )

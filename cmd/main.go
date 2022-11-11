@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"text/tabwriter"
 
@@ -11,6 +13,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 type KeyType int
@@ -57,13 +61,10 @@ var (
 	}
 
 	subscribeCmd = &cobra.Command{
-		Use:   "subscribe <ID>",
+		Use:   "subscribe <YouTube channel URL>",
 		Short: "Subscribe to the given channel",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
-			return yrs.Subscribe(args[0])
-		},
+		RunE:  subscribe,
 	}
 
 	listVideosCmd = &cobra.Command{
@@ -132,6 +133,53 @@ var (
 		},
 	}
 )
+
+func getChannelID(r io.Reader) string {
+	channelID := ""
+	h := html.NewTokenizer(r)
+
+LOOP:
+	for {
+		tt := h.Next()
+		switch {
+		case tt == html.ErrorToken:
+			break LOOP
+		default:
+			t := h.Token()
+			if t.DataAtom != atom.Meta {
+				continue
+			}
+
+			attrMap := map[string]string{}
+			for _, a := range t.Attr {
+				attrMap[a.Key] = a.Val
+			}
+
+			if attrMap["itemprop"] == "channelId" {
+				channelID = attrMap["content"]
+				break LOOP
+			}
+		}
+	}
+
+	return channelID
+}
+
+func subscribe(cmd *cobra.Command, args []string) error {
+	res, err := http.Get(args[0])
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	channelID := getChannelID(res.Body)
+	if channelID == "" {
+		return fmt.Errorf("channelID not found in %s", args[0])
+	}
+
+	yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
+	return yrs.Subscribe(channelID)
+}
 
 func main() {
 	rootCmd.PersistentFlags().StringVarP(

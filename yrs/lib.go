@@ -157,7 +157,7 @@ func (y *Yrs) Subscribe(channelStr string) error {
 	rss := fmt.Sprintf(rssFormat, channelStr)
 	feed, err := parser.ParseURL(rss)
 	if err != nil {
-		return err
+		return fmt.Errorf("error parsing RSS url %s: %w", rss, err)
 	}
 
 	channel := Channel{
