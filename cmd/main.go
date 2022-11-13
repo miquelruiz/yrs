@@ -73,34 +73,7 @@ var (
 	listChannelsCmd = &cobra.Command{
 		Use:   "list-channels",
 		Short: "List all the subscribed channels",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
-			channels, err := yrs.GetChannels()
-			if err != nil {
-				return err
-			}
-			if len(channels) == 0 {
-				return nil
-			}
-
-			w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', 0)
-			defer w.Flush()
-			fmt.Fprintln(w, "#\tID\tName\tURL\tAutodownload")
-
-			for i, c := range channels {
-				fmt.Fprintf(
-					w,
-					"%d\t%s\t%s\t%s\t%t\t\n",
-					i,
-					c.ID,
-					c.Name,
-					c.URL,
-					c.Autodownload,
-				)
-			}
-
-			return nil
-		},
+		RunE:  listChannels,
 	}
 
 	unsubscribeCmd = &cobra.Command{
@@ -203,6 +176,35 @@ func listVideos(cmd *cobra.Command, args []string) error {
 			v.URL,
 			v.Published,
 			v.Channel.Name,
+		)
+	}
+
+	return nil
+}
+
+func listChannels(cmd *cobra.Command, args []string) error {
+	yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
+	channels, err := yrs.GetChannels()
+	if err != nil {
+		return err
+	}
+	if len(channels) == 0 {
+		return nil
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', 0)
+	defer w.Flush()
+	fmt.Fprintln(w, "#\tID\tName\tURL\tAutodownload")
+
+	for i, c := range channels {
+		fmt.Fprintf(
+			w,
+			"%d\t%s\t%s\t%s\t%t\t\n",
+			i,
+			c.ID,
+			c.Name,
+			c.URL,
+			c.Autodownload,
 		)
 	}
 
