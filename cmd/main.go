@@ -102,6 +102,16 @@ var (
 			return nil
 		},
 	}
+
+	unsubscribeCmd = &cobra.Command{
+		Use:   "unsubscribe <Channel ID>",
+		Short: "Unsubscribe from the given channel",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
+			return yrs.Unsubscribe(args[0])
+		},
+	}
 )
 
 func getChannelID(r io.Reader) string {
@@ -212,6 +222,7 @@ func main() {
 	rootCmd.AddCommand(subscribeCmd)
 	rootCmd.AddCommand(listVideosCmd)
 	rootCmd.AddCommand(listChannelsCmd)
+	rootCmd.AddCommand(unsubscribeCmd)
 
 	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
 		panic(err)

@@ -32,7 +32,10 @@ CREATE TABLE videos (
 	channel_id INTEGER NOT NULL,
 	downloaded INTEGER NOT NULL,
 	PRIMARY KEY (id),
-	FOREIGN KEY(channel_id) REFERENCES channels (id)
+	CONSTRAINT fk_channel
+		FOREIGN KEY(channel_id)
+		REFERENCES channels (id)
+		ON DELETE CASCADE
 );`
 
 	urlFormat = "https://www.youtube.com/channel/%s"
@@ -57,6 +60,15 @@ func New(driver, dsn string) (*Yrs, error) {
 		err = initializeDb(driver, dsn)
 	} else if fileinfo.Size() == 0 {
 		err = initializeDb(driver, dsn)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("error initializing db: %w", err)
+	}
+
+	_, err = db.Exec("PRAGMA foreign_keys=on")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't enable foreign keys: %w", err)
 	}
 
 	return &Yrs{db}, err
@@ -267,4 +279,14 @@ func (y *Yrs) updateChannelVideos(c *Channel, vc chan Video) error {
 	}
 
 	return nil
+}
+
+func (y *Yrs) Unsubscribe(channelID string) error {
+	delete, err := y.db.Prepare("DELETE FROM channels WHERE id=?")
+	if err != nil {
+		return err
+	}
+
+	_, err = delete.Exec(channelID)
+	return err
 }
