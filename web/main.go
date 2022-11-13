@@ -1,7 +1,9 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"html/template"
 	"log"
 
 	"github.com/miquelruiz/yrs/lib"
@@ -12,6 +14,14 @@ import (
 
 type WebYrs yrs.Yrs
 
+var (
+	//go:embed css js
+	static embed.FS
+
+	//go:embed templates
+	templates embed.FS
+)
+
 func (w *WebYrs) listChannels(rw http.ResponseWriter, req *http.Request) {
 	y := yrs.Yrs(*w)
 	channels, err := y.GetChannels()
@@ -20,16 +30,10 @@ func (w *WebYrs) listChannels(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	for i, c := range channels {
-		fmt.Fprintf(
-			rw,
-			"%d\t%s\t%s\t%s\t%t\t\n",
-			i,
-			c.ID,
-			c.Name,
-			c.URL,
-			c.Autodownload,
-		)
+	t, _ := template.ParseFS(templates, "templates/base.tmpl", "templates/channels.tmpl")
+	if err = t.Execute(rw, channels); err != nil {
+		fmt.Println(err)
+		return
 	}
 }
 
@@ -38,13 +42,34 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(config)
+
 	y, err := yrs.New(config.DatabaseDriver, config.DatabaseUrl)
 	if err != nil {
 		panic(err)
 	}
 
 	wy := WebYrs(*y)
-	http.HandleFunc("/list-channels", wy.listChannels)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+
+	mux := http.NewServeMux()
+
+	mux.Handle("/css/", http.FileServer(http.FS(static)))
+	mux.Handle("/js/", http.FileServer(http.FS(static)))
+
+	mux.HandleFunc("/list-channels", wy.listChannels)
+	mux.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
+		t, err := template.ParseFS(templates, "templates/base.tmpl")
+		if err != nil {
+			fmt.Printf("Error parsing template: %v", err)
+			return
+		}
+		if err = t.Execute(rw, nil); err != nil {
+			fmt.Printf("Error running template: %v", err)
+			return
+		}
+	})
+
+	fmt.Println("Serving")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatal(err)
+	}
 }
