@@ -176,9 +176,9 @@ func (y *Yrs) Subscribe(channelStr string) error {
 	return nil
 }
 
-func (y *Yrs) Update() error {
+func (y *Yrs) Update() ([]Video, error) {
 	var wg sync.WaitGroup
-	videos := make(chan *Video, 100)
+	videos := make(chan Video, 100)
 	err := y.forEachChannel(func(c *Channel) {
 		wg.Add(1)
 		go func() {
@@ -187,15 +187,22 @@ func (y *Yrs) Update() error {
 		}()
 	})
 
+	retVideos := make([]Video, 0)
 	if err != nil {
-		return err
+		return retVideos, err
 	}
 
+	go func() {
+		for v := range videos {
+			retVideos = append(retVideos, v)
+		}
+	}()
+
 	wg.Wait()
-	return nil
+	return retVideos, nil
 }
 
-func (y *Yrs) updateChannelVideos(c *Channel, vc chan *Video) error {
+func (y *Yrs) updateChannelVideos(c *Channel, vc chan Video) error {
 	parser := gofeed.NewParser()
 	feed, err := parser.ParseURL(c.RSS)
 	if err != nil {
@@ -220,7 +227,7 @@ func (y *Yrs) updateChannelVideos(c *Channel, vc chan *Video) error {
 				err,
 			)
 		}
-		v := &Video{
+		v := Video{
 			ID:         item.Extensions["yt"]["videoId"][0].Value,
 			URL:        item.Link,
 			Title:      item.Title,

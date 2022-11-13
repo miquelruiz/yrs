@@ -54,10 +54,7 @@ var (
 	updateCmd = &cobra.Command{
 		Use:   "update",
 		Short: "Update subscriptions",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
-			return yrs.Update()
-		},
+		RunE:  update,
 	}
 
 	subscribeCmd = &cobra.Command{
@@ -179,6 +176,25 @@ func subscribe(cmd *cobra.Command, args []string) error {
 
 	yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
 	return yrs.Subscribe(channelID)
+}
+
+func update(cmd *cobra.Command, args []string) error {
+	yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
+	videos, err := yrs.Update()
+	if err != nil {
+		return err
+	}
+
+	for _, v := range videos {
+		fmt.Printf(
+			"Title: %s\nChannel: %s\nURL: %s\n\n",
+			v.Title,
+			v.ChannelId,
+			v.URL,
+		)
+	}
+
+	return nil
 }
 
 func main() {
