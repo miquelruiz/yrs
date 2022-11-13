@@ -19,4 +19,5 @@ type Video struct {
 	Published  time.Time
 	ChannelId  string
 	Downloaded bool
+	Channel		 *Channel
 }

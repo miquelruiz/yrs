@@ -234,6 +234,7 @@ func (y *Yrs) updateChannelVideos(c *Channel, vc chan Video) error {
 			Published:  date,
 			ChannelId:  item.Extensions["yt"]["channelId"][0].Value,
 			Downloaded: false,
+			Channel:    c,
 		}
 		_, err = insert.Exec(
 			v.ID, v.URL, v.Title, v.Published, v.ChannelId, 0,

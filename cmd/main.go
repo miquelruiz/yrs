@@ -189,7 +189,7 @@ func update(cmd *cobra.Command, args []string) error {
 		fmt.Printf(
 			"Title: %s\nChannel: %s\nURL: %s\n\n",
 			v.Title,
-			v.ChannelId,
+			v.Channel.Name,
 			v.URL,
 		)
 	}
