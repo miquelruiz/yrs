@@ -138,8 +138,8 @@ func initializeDb(driver, dsn string) error {
 	return nil
 }
 
-func (y *Yrs) insertChannel(c Channel) error {
-	insert, err := y.db.Prepare(`
+func (y *Yrs) insertChannel(tx *sql.Tx, c Channel) error {
+	insert, err := tx.Prepare(`
 		INSERT INTO channels (id, url, name, rss, autodownload)
 		VALUES (?, ?, ?, ?, 0)
 	`)
@@ -193,27 +193,45 @@ func (y *Yrs) Subscribe(channelStr string) error {
 		Autodownload: false,
 	}
 
-	if err := y.insertChannel(channel); err != nil {
+	tx, err := y.db.Begin()
+	if err != nil {
 		return err
 	}
 
-	y.updateChannelVideos(&channel, nil)
-	return nil
+	if err := y.insertChannel(tx, channel); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = updateChannelVideos(tx, &channel, nil)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (y *Yrs) Update() ([]Video, error) {
 	var wg sync.WaitGroup
 	videos := make(chan Video, 100)
-	err := y.forEachChannel(func(c *Channel) {
+	retVideos := make([]Video, 0)
+
+	tx, err := y.db.Begin()
+	if err != nil {
+		return retVideos, err
+	}
+
+	err = y.forEachChannel(func(c *Channel) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			y.updateChannelVideos(c, videos)
+			updateChannelVideos(tx, c, videos)
 		}()
 	})
 
-	retVideos := make([]Video, 0)
 	if err != nil {
+		tx.Rollback()
 		return retVideos, err
 	}
 
@@ -224,17 +242,20 @@ func (y *Yrs) Update() ([]Video, error) {
 	}()
 
 	wg.Wait()
-	return retVideos, nil
+	close(videos)
+
+	err = tx.Commit()
+	return retVideos, err
 }
 
-func (y *Yrs) updateChannelVideos(c *Channel, vc chan Video) error {
+func updateChannelVideos(tx *sql.Tx, c *Channel, vc chan Video) error {
 	parser := gofeed.NewParser()
 	feed, err := parser.ParseURL(c.RSS)
 	if err != nil {
 		return fmt.Errorf("error retrieving %s: %w", c.RSS, err)
 	}
 
-	insert, err := y.db.Prepare(
+	insert, err := tx.Prepare(
 		`INSERT INTO videos (id, url, title, published, channel_id, downloaded)
 		VALUES (?, ?, ?, ?, ?, ?)`,
 	)
