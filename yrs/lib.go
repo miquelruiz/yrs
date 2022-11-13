@@ -82,7 +82,15 @@ func (y *Yrs) forEachChannel(f func(*Channel)) error {
 }
 
 func (y *Yrs) forEachVideo(f func(*Video)) error {
-	rows, err := y.db.Query("SELECT * FROM videos")
+	rows, err := y.db.Query(`
+		SELECT
+			v.id, v.title, v.url, v.published, v.channel_id, v.downloaded,
+			c.id, c.url, c.name, c.rss, c.autodownload
+		FROM videos v
+		JOIN channels c
+		ON (v.channel_id = c.id)
+		ORDER BY v.published
+	`)
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve the videos: %w", err)
 	}
@@ -90,7 +98,12 @@ func (y *Yrs) forEachVideo(f func(*Video)) error {
 
 	for rows.Next() {
 		v := Video{}
-		err = rows.Scan(&v.ID, &v.Title, &v.URL, &v.Published, &v.ChannelId, &v.Downloaded)
+		c := Channel{}
+		err = rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Published, &v.ChannelId, &v.Downloaded,
+			&c.ID, &c.URL, &c.Name, &c.RSS, &c.Autodownload,
+		)
+		v.Channel = &c
 		if err != nil {
 			return fmt.Errorf("scan failed: %w", err)
 		}

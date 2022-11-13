@@ -67,34 +67,7 @@ var (
 	listVideosCmd = &cobra.Command{
 		Use:   "list-videos",
 		Short: "List all the videos in the database",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
-			videos, err := yrs.GetVideos()
-			if err != nil {
-				return err
-			}
-			if len(videos) == 0 {
-				return nil
-			}
-
-			w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', 0)
-			defer w.Flush()
-			fmt.Fprintln(w, "ID\tTitle\tURL\tPublished\tChannelId")
-
-			for _, v := range videos {
-				fmt.Fprintf(
-					w,
-					"%s\t%s\t%s\t%s\t%s\t\n",
-					v.ID,
-					v.Title,
-					v.URL,
-					v.Published,
-					v.ChannelId,
-				)
-			}
-
-			return nil
-		},
+		RunE:  listVideos,
 	}
 
 	listChannelsCmd = &cobra.Command{
@@ -191,6 +164,35 @@ func update(cmd *cobra.Command, args []string) error {
 			v.Title,
 			v.Channel.Name,
 			v.URL,
+		)
+	}
+
+	return nil
+}
+
+func listVideos(cmd *cobra.Command, args []string) error {
+	yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
+	videos, err := yrs.GetVideos()
+	if err != nil {
+		return err
+	}
+	if len(videos) == 0 {
+		return nil
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', 0)
+	defer w.Flush()
+	fmt.Fprintln(w, "ID\tTitle\tURL\tPublished\tChannelId")
+
+	for _, v := range videos {
+		fmt.Fprintf(
+			w,
+			"%s\t%s\t%s\t%s\t%s\t\n",
+			v.ID,
+			v.Title,
+			v.URL,
+			v.Published,
+			v.Channel.Name,
 		)
 	}
 
