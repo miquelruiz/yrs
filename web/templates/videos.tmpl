@@ -1,0 +1,26 @@
+{{ define "content" }}
+{{ if . }}
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">ID</th>
+      <th scope="col">Title</th>
+      <th scope="col">Channel</th>
+      <th scope="col">URL</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{ range $i, $v := . }}
+    <tr>
+      <th scope="row">{{ $i }}</th>
+      <td>{{ $v.ID }}</td>
+      <td>{{ $v.Title }}</td>
+      <td>{{ $v.Channel.Name }}</td>
+      <td><a href="{{ $v.URL }}">{{ $v.URL }}</a></td>
+    </tr>
+  {{ end }}
+  </tbody>
+</table>
+{{ end }}
+{{ end }}

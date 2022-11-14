@@ -37,6 +37,21 @@ func (w *WebYrs) listChannels(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (w *WebYrs) listVideos(rw http.ResponseWriter, req *http.Request) {
+	y := yrs.Yrs(*w)
+	videos, err := y.GetVideos()
+	if err != nil {
+		fmt.Fprintf(rw, "Error retrieving videos: %v", err)
+		return
+	}
+
+	t, _ := template.ParseFS(templates, "templates/base.tmpl", "templates/videos.tmpl")
+	if err = t.Execute(rw, videos); err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
 func main() {
 	config, err := lib.LoadConfig("")
 	if err != nil {
@@ -56,6 +71,8 @@ func main() {
 	mux.Handle("/js/", http.FileServer(http.FS(static)))
 
 	mux.HandleFunc("/list-channels", wy.listChannels)
+	mux.HandleFunc("/list-videos", wy.listVideos)
+
 	mux.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
 		t, err := template.ParseFS(templates, "templates/base.tmpl")
 		if err != nil {
