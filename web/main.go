@@ -75,7 +75,7 @@ func main() {
 
 	mux.HandleFunc("/list-channels", wy.listChannels)
 	mux.HandleFunc("/list-videos", func(rw http.ResponseWriter, req *http.Request) {
-		videos, err := y.Update()
+		videos, err := y.GetVideos()
 		if err != nil {
 			fmt.Fprintf(rw, "Error retrieving videos: %v", err)
 			return
