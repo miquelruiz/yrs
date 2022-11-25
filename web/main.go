@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"fmt"
 	"html/template"
 	"log"
@@ -20,7 +21,16 @@ var (
 
 	//go:embed templates
 	templates embed.FS
+
+	address string
+	port    int
 )
+
+func init() {
+	flag.StringVar(&address, "address", "127.0.0.1", "Address to bind to")
+	flag.IntVar(&port, "port", 8080, "Port to bind to")
+	flag.Parse()
+}
 
 func (w *WebYrs) listChannels(rw http.ResponseWriter, req *http.Request) {
 	y := yrs.Yrs(*w)
@@ -94,8 +104,9 @@ func main() {
 		}
 	})
 
-	fmt.Println("Serving")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	addr := fmt.Sprintf("%s:%d", address, port)
+	fmt.Printf("Serving at %s\n", addr)
+	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)
 	}
 }
