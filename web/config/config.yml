@@ -1,0 +1,2 @@
+database_driver: sqlite3
+database_url: file:/yrs/yrs.db
