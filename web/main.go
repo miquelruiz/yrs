@@ -22,11 +22,13 @@ var (
 	//go:embed templates
 	templates embed.FS
 
-	address string
-	port    int
+	configPath string
+	address    string
+	port       int
 )
 
 func init() {
+	flag.StringVar(&configPath, "config", "/etc/yrs/config.yml", "Path to the config file")
 	flag.StringVar(&address, "address", "127.0.0.1", "Address to bind to")
 	flag.IntVar(&port, "port", 8080, "Port to bind to")
 	flag.Parse()
@@ -56,7 +58,7 @@ func renderVideos(rw http.ResponseWriter, req *http.Request, videos []yrs.Video)
 }
 
 func main() {
-	config, err := lib.LoadConfig("")
+	config, err := lib.LoadConfig(configPath)
 	if err != nil {
 		panic(err)
 	}
