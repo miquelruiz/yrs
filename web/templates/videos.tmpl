@@ -1,5 +1,5 @@
 {{ define "content" }}
-{{ if . }}
+{{ if .videos }}
 <table class="table">
   <thead>
     <tr>
@@ -11,7 +11,7 @@
     </tr>
   </thead>
   <tbody>
-  {{ range $i, $v := . }}
+  {{ range $i, $v := .videos }}
     <tr>
       <th scope="row">{{ $i }}</th>
       <td>{{ $v.ID }}</td>

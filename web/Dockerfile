@@ -22,6 +22,7 @@ COPY --from=builder /root/yrs/web/config /etc/yrs
 VOLUME [ "/data" ]
 
 ENV PORT=8080
+ENV ROOT_URL=""
 EXPOSE $PORT
 
-ENTRYPOINT yrs-web --port $PORT --address 0.0.0.0
+ENTRYPOINT yrs-web --port $PORT --address 0.0.0.0 --root-url $ROOT_URL

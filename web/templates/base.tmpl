@@ -7,7 +7,7 @@
     <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
     <meta name="generator" content="Hugo 0.104.2">
     <title>Fixed top navbar example · Bootstrap v5.2</title>
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ .rootUrl }}/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
       .bd-placeholder-img {
@@ -64,7 +64,7 @@
 
 
     <!-- Custom styles for this template -->
-    <link href="css/main.css" rel="stylesheet">
+    <link href="{{ .rootUrl }}/css/main.css" rel="stylesheet">
   </head>
   <body>
 
@@ -77,16 +77,16 @@
     <div class="collapse navbar-collapse" id="navbarCollapse">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="/">Home</a>
+          <a class="nav-link active" aria-current="page" href="{{ .rootUrl }}">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/list-channels">Channels</a>
+          <a class="nav-link" href="{{ .rootUrl }}/list-channels">Channels</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/list-videos">Videos</a>
+          <a class="nav-link" href="{{ .rootUrl }}/list-videos">Videos</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/update">Update</a>
+          <a class="nav-link" href="{{ .rootUrl }}/update">Update</a>
         </li>
         <li class="nav-item">
           <a class="nav-link disabled">Disabled</a>
@@ -106,6 +106,6 @@
 {{ end }}
 </main>
 
-    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="{{ .rootUrl }}/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
