@@ -3,9 +3,8 @@
 #--------------
 FROM golang:1.19-alpine as builder
 
-RUN apk add git build-base
-WORKDIR /root
-RUN git clone https://github.com/miquelruiz/yrs.git
+RUN apk add build-base
+COPY . /root/yrs
 WORKDIR /root/yrs/web
 RUN ["go", "build", "-o", "yrs-web", "."]
 
@@ -15,9 +14,7 @@ RUN ["go", "build", "-o", "yrs-web", "."]
 
 FROM alpine:latest as runner
 
-RUN ls -lah
-COPY --from=builder /root/yrs/web/yrs-web /usr/bin
-COPY --from=builder /root/yrs/web/config /etc/yrs
+COPY --from=builder /root/yrs/web/ /opt/yrs
 
 VOLUME [ "/data" ]
 
@@ -25,4 +22,9 @@ ENV PORT=8080
 ENV ROOT_URL=""
 EXPOSE $PORT
 
-ENTRYPOINT yrs-web --port $PORT --address 0.0.0.0 --root-url $ROOT_URL
+WORKDIR /opt/yrs
+ENTRYPOINT /opt/yrs/yrs-web \
+    --config /opt/yrs/config/config.yml \
+    --port $PORT \
+    --address 0.0.0.0 \
+    --root-url "$ROOT_URL"

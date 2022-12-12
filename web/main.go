@@ -133,7 +133,7 @@ func main() {
 	})
 
 	addr := fmt.Sprintf("%s:%d", address, port)
-	fmt.Printf("Serving at %s\n", addr)
+	fmt.Printf("Serving at %s/%s\n", addr, rootUrl)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)
 	}
