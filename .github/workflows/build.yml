@@ -1,0 +1,33 @@
+name: build
+
+on:
+  pull_request:
+  push:
+    # branches:
+    #   - master
+
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: miquelruiz/yrs
+          tags: |
+            type=raw,value={{ date 'YYYYMMDDHHmm' }}
+            type=raw,value=latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          tags: ${{ steps.meta.outputs.tags }}
