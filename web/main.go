@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/miquelruiz/yrs/lib"
@@ -101,6 +102,17 @@ func main() {
 		if err != nil {
 			fmt.Fprintf(rw, "Error retrieving videos: %v", err)
 			return
+		}
+		last := req.URL.Query().Get("last")
+		if last != "" {
+			lastInt, err := strconv.Atoi(last)
+			if err != nil {
+				fmt.Printf("Ilegal 'last' param: %s", err)
+				lastInt = len(videos)
+			}
+			if len(videos) > lastInt {
+				videos = videos[len(videos)-lastInt:]
+			}
 		}
 		renderVideos(rw, req, videos)
 	})
