@@ -30,6 +30,7 @@ func init() {
 	flag.StringVar(&address, "address", "127.0.0.1", "Address to bind to")
 	flag.IntVar(&port, "port", 8080, "Port to bind to")
 	flag.Parse()
+	cleanRootUrl()
 }
 
 func createRender() multitemplate.Renderer {
@@ -85,8 +86,17 @@ func index(c *gin.Context) {
 }
 
 func buildUrl(url string) string {
-	cleanRoot := strings.TrimSuffix(rootUrl, "/")
-	return fmt.Sprintf("%s%s", cleanRoot, url)
+	return fmt.Sprintf("%s%s", rootUrl, url)
+}
+
+func cleanRootUrl() {
+	if rootUrl == "" {
+		return
+	}
+	rootUrl = fmt.Sprintf(
+		"/%s",
+		strings.TrimSuffix(strings.TrimPrefix(rootUrl, "/"), "/"),
+	)
 }
 
 func main() {
@@ -107,11 +117,11 @@ func main() {
 	r.Static(buildUrl("/js/"), "js")
 	r.Static(buildUrl("/css/"), "css")
 
-	r.GET("/list-channels", wy.listChannels)
-	r.GET("/list-videos", wy.listVideos)
-	r.GET("/update", wy.update)
+	r.GET(buildUrl("/list-channels"), wy.listChannels)
+	r.GET(buildUrl("/list-videos"), wy.listVideos)
+	r.GET(buildUrl("/update"), wy.update)
 
-	r.GET("/", index)
+	r.GET(buildUrl("/"), index)
 
 	addr := fmt.Sprintf("%s:%d", address, port)
 	if err := r.Run(addr); err != nil {
