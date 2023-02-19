@@ -19,7 +19,6 @@ jobs:
           images: miquelruiz/yrs
           tags: |
             type=semver,pattern={{version}}
-            type=raw,value=latest
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
