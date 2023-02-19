@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,6 +10,9 @@ import (
 
 	"github.com/miquelruiz/yrs/lib"
 	"github.com/miquelruiz/yrs/yrs"
+
+	"github.com/gin-contrib/multitemplate"
+	"github.com/gin-gonic/gin"
 )
 
 type WebYrs yrs.Yrs
@@ -30,96 +32,56 @@ func init() {
 	flag.Parse()
 }
 
-func (w *WebYrs) listChannels(rw http.ResponseWriter, req *http.Request) {
-	fmt.Println("Serving /list-channels")
-	y := yrs.Yrs(*w)
-	channels, err := y.GetChannels()
-	if err != nil {
-		fmt.Fprintf(rw, "Error retrieving channels: %v", err)
-		return
-	}
-
-	t, err := template.ParseFiles("templates/base.tmpl", "templates/channels.tmpl")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	tplVars := map[string]interface{}{
-		"rootUrl":  rootUrl,
-		"channels": channels,
-	}
-	if err = t.Execute(rw, tplVars); err != nil {
-		fmt.Println(err)
-		return
-	}
+func createRender() multitemplate.Renderer {
+	r := multitemplate.NewRenderer()
+	r.AddFromFiles("index", "templates/base.tmpl")
+	r.AddFromFiles("listChannels", "templates/base.tmpl", "templates/channels.tmpl")
+	r.AddFromFiles("videos", "templates/base.tmpl", "templates/videos.tmpl")
+	return r
 }
 
-func (w *WebYrs) listVideos(rw http.ResponseWriter, req *http.Request) {
-	fmt.Println("Serving /list-videos")
+func (w *WebYrs) listChannels(c *gin.Context) {
+	y := yrs.Yrs(*w)
+	channels, err := y.GetChannels()
+	c.HTML(http.StatusOK, "listChannels", gin.H{
+		"rootUrl":  rootUrl,
+		"channels": channels,
+		"error":    err,
+	})
+}
+
+func (w *WebYrs) listVideos(c *gin.Context) {
 	y := yrs.Yrs(*w)
 	videos, err := y.GetVideos()
-	if err != nil {
-		fmt.Fprintf(rw, "Error retrieving videos: %v", err)
-		return
-	}
-	last := req.URL.Query().Get("last")
-	if last != "" {
+	last := c.DefaultQuery("last", "20")
+	if last != "all" {
 		lastInt, err := strconv.Atoi(last)
 		if err != nil {
-			fmt.Printf("Ilegal 'last' param: %s", err)
 			lastInt = len(videos)
 		}
 		if len(videos) > lastInt {
 			videos = videos[len(videos)-lastInt:]
 		}
 	}
-	renderVideos(rw, req, videos)
-}
-
-func (w *WebYrs) update(rw http.ResponseWriter, req *http.Request) {
-	fmt.Println("Serving /update")
-	y := yrs.Yrs(*w)
-	videos, err := y.Update()
-	if err != nil {
-		fmt.Fprintf(rw, "Error updating videos: %v", err)
-		return
-	}
-	renderVideos(rw, req, videos)
-}
-
-func index(rw http.ResponseWriter, req *http.Request) {
-	fmt.Println("Serving /")
-	t, err := template.ParseFiles("templates/base.tmpl")
-	if err != nil {
-		fmt.Printf("Error parsing template: %v", err)
-		return
-	}
-
-	tplVars := map[string]interface{}{
-		"rootUrl": rootUrl,
-	}
-	if err = t.Execute(rw, tplVars); err != nil {
-		fmt.Printf("Error running template: %v", err)
-		return
-	}
-}
-
-func renderVideos(rw http.ResponseWriter, req *http.Request, videos []yrs.Video) {
-	t, err := template.ParseFiles("templates/base.tmpl", "templates/videos.tmpl")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	tplVars := map[string]interface{}{
+	c.HTML(http.StatusOK, "videos", gin.H{
 		"rootUrl": rootUrl,
 		"videos":  videos,
-	}
-	if err := t.Execute(rw, tplVars); err != nil {
-		fmt.Println(err)
-		return
-	}
+		"error":   err,
+	})
+}
+
+func (w *WebYrs) update(c *gin.Context) {
+	y := yrs.Yrs(*w)
+	videos, err := y.Update()
+	c.HTML(http.StatusOK, "videos", gin.H{
+		"rootUrl": rootUrl,
+		"videos":  videos,
+		"error":   err,
+	})
+}
+
+func index(c *gin.Context) {
+	c.HTML(http.StatusOK, "index", gin.H{"rootUrl": rootUrl})
 }
 
 func buildUrl(url string) string {
@@ -139,20 +101,20 @@ func main() {
 	}
 
 	wy := WebYrs(*y)
-	mux := http.NewServeMux()
+	r := gin.Default()
+	r.HTMLRender = createRender()
 
-	mux.Handle(buildUrl("/css/"), http.StripPrefix(buildUrl("/css/"), http.FileServer(http.Dir("css"))))
-	mux.Handle(buildUrl("/js/"), http.StripPrefix(buildUrl("/js/"), http.FileServer(http.Dir("js"))))
+	r.Static(buildUrl("/js/"), "js")
+	r.Static(buildUrl("/css/"), "css")
 
-	mux.HandleFunc(buildUrl("/list-channels"), wy.listChannels)
-	mux.HandleFunc(buildUrl("/list-videos"), wy.listVideos)
-	mux.HandleFunc(buildUrl("/update"), wy.update)
+	r.GET("/list-channels", wy.listChannels)
+	r.GET("/list-videos", wy.listVideos)
+	r.GET("/update", wy.update)
 
-	mux.HandleFunc(buildUrl("/"), index)
+	r.GET("/", index)
 
 	addr := fmt.Sprintf("%s:%d", address, port)
-	fmt.Printf("Serving at %s/%s\n", addr, rootUrl)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := r.Run(addr); err != nil {
 		log.Fatal(err)
 	}
 }
