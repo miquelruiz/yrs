@@ -2,8 +2,8 @@ name: build
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - v*
 
 jobs:
   build:
@@ -18,7 +18,7 @@ jobs:
         with:
           images: miquelruiz/yrs
           tags: |
-            type=raw,value={{ date 'YYYYMMDDHHmm' }}
+            type=semver,pattern={{version}}
             type=raw,value=latest
 
       - name: Set up Docker Buildx
