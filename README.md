@@ -11,7 +11,7 @@ happen via `yrs update`, running it either manually or via cron.
 ## Installation
 
 ```
-go install github.com/miquelruiz/yrs
+go install github.com/miquelruiz/yrs/cmd/yrs@latest
 ```
 
 ## Basic usage
