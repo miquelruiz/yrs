@@ -74,7 +74,7 @@ func New(driver, dsn string) (*Yrs, error) {
 	return &Yrs{db}, err
 }
 
-func (y *Yrs) forEachChannel(f func(*Channel)) error {
+func (y *Yrs) forEachChannel(f func(*Channel) error) error {
 	rows, err := y.db.Query("SELECT * FROM channels")
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve the channels: %w", err)
@@ -87,7 +87,10 @@ func (y *Yrs) forEachChannel(f func(*Channel)) error {
 		if err != nil {
 			return fmt.Errorf("scan failed: %w", err)
 		}
-		f(&c)
+		err = f(&c)
+		if err != nil {
+			return fmt.Errorf("error in callback: %w", err)
+		}
 	}
 
 	return nil
@@ -153,8 +156,9 @@ func (y *Yrs) insertChannel(tx *sql.Tx, c Channel) error {
 
 func (y *Yrs) GetChannels() ([]Channel, error) {
 	rowSlice := make([]Channel, 0)
-	err := y.forEachChannel(func(c *Channel) {
+	err := y.forEachChannel(func(c *Channel) error {
 		rowSlice = append(rowSlice, *c)
+		return nil
 	})
 
 	if err != nil {
@@ -178,21 +182,22 @@ func (y *Yrs) GetVideos() ([]Video, error) {
 }
 
 func (y *Yrs) Subscribe(channelStr string) error {
-	parser := gofeed.NewParser()
 	rss := fmt.Sprintf(rssFormat, channelStr)
-	feed, err := parser.ParseURL(rss)
+	feed, err := gofeed.NewParser().ParseURL(rss)
 	if err != nil {
 		return fmt.Errorf("error parsing RSS url %s: %w", rss, err)
 	}
 
-	channel := Channel{
+	return y.subscribeChannel(Channel{
 		ID:           channelStr,
 		URL:          fmt.Sprintf(urlFormat, channelStr),
 		Name:         feed.Title,
 		RSS:          rss,
 		Autodownload: false,
-	}
+	}, feed)
+}
 
+func (y *Yrs) subscribeChannel(channel Channel, feed *gofeed.Feed) error {
 	tx, err := y.db.Begin()
 	if err != nil {
 		return err
@@ -203,7 +208,7 @@ func (y *Yrs) Subscribe(channelStr string) error {
 		return err
 	}
 
-	err = updateChannelVideos(tx, &channel, nil)
+	err = updateChannelVideos(tx, &channel, nil, feed)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -213,8 +218,9 @@ func (y *Yrs) Subscribe(channelStr string) error {
 }
 
 func (y *Yrs) Update() ([]Video, error) {
-	var wg sync.WaitGroup
+	errors_ := make(chan error, 100)
 	videos := make(chan Video, 100)
+	retErrors := make([]error, 0)
 	retVideos := make([]Video, 0)
 
 	tx, err := y.db.Begin()
@@ -222,18 +228,34 @@ func (y *Yrs) Update() ([]Video, error) {
 		return retVideos, err
 	}
 
-	err = y.forEachChannel(func(c *Channel) {
+	var wg sync.WaitGroup
+	err = y.forEachChannel(func(c *Channel) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			updateChannelVideos(tx, c, videos)
+			feed, e := gofeed.NewParser().ParseURL(c.RSS)
+			if e != nil {
+				errors_ <- fmt.Errorf("error retrieving %s: %s", c.RSS, e)
+				return
+			}
+			e = updateChannelVideos(tx, c, videos, feed)
+			if e != nil {
+				errors_ <- e
+			}
 		}()
+		return nil
 	})
 
 	if err != nil {
 		tx.Rollback()
 		return retVideos, err
 	}
+
+	go func() {
+		for e := range errors_ {
+			retErrors = append(retErrors, e)
+		}
+	}()
 
 	go func() {
 		for v := range videos {
@@ -243,18 +265,18 @@ func (y *Yrs) Update() ([]Video, error) {
 
 	wg.Wait()
 	close(videos)
+	close(errors_)
+
+	if len(retErrors) > 0 {
+		tx.Rollback()
+		return retVideos, errors.Join(retErrors...)
+	}
 
 	err = tx.Commit()
 	return retVideos, err
 }
 
-func updateChannelVideos(tx *sql.Tx, c *Channel, vc chan Video) error {
-	parser := gofeed.NewParser()
-	feed, err := parser.ParseURL(c.RSS)
-	if err != nil {
-		return fmt.Errorf("error retrieving %s: %w", c.RSS, err)
-	}
-
+func updateChannelVideos(tx *sql.Tx, c *Channel, vc chan Video, feed *gofeed.Feed) error {
 	insert, err := tx.Prepare(
 		`INSERT INTO videos (id, url, title, published, channel_id, downloaded)
 		VALUES (?, ?, ?, ?, ?, ?)`,

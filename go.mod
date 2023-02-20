@@ -1,8 +1,9 @@
 module github.com/miquelruiz/yrs
 
-go 1.19
+go 1.20
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/gin-contrib/multitemplate v0.0.0-20230212012517-45920c92c271
 	github.com/gin-gonic/gin v1.8.2
 	github.com/mattn/go-sqlite3 v1.14.15
