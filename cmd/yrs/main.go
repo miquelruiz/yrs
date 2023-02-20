@@ -8,8 +8,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/miquelruiz/yrs/lib"
-	"github.com/miquelruiz/yrs/yrs"
+	"github.com/miquelruiz/yrs/internal/config"
+	"github.com/miquelruiz/yrs/pkg/yrs"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
@@ -30,7 +30,7 @@ var (
 		Short: "YouTube RSS Subscriber",
 		Long:  "A tool to subscribe to YouTube channels without a YouTube account",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			c, err := lib.LoadConfig(ConfigPath)
+			c, err := config.Load(ConfigPath)
 			if err != nil {
 				return fmt.Errorf(
 					"couldn't load the config file %s: %w",

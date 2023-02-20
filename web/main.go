@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/miquelruiz/yrs/lib"
-	"github.com/miquelruiz/yrs/yrs"
+	"github.com/miquelruiz/yrs/internal/config"
+	"github.com/miquelruiz/yrs/pkg/yrs"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
@@ -100,7 +100,7 @@ func cleanRootUrl() {
 }
 
 func main() {
-	config, err := lib.LoadConfig(configPath)
+	config, err := config.Load(configPath)
 	if err != nil {
 		panic(err)
 	}

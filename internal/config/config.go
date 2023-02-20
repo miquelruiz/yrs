@@ -1,4 +1,4 @@
-package lib
+package config
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ type Config struct {
 	DatabaseUrl    string `yaml:"database_url"`
 }
 
-func LoadConfig(configPath string) (*Config, error) {
+func Load(configPath string) (*Config, error) {
 	mayInitConfig := false
 	if configPath == "" {
 		home, err := os.UserHomeDir()
@@ -38,7 +38,7 @@ OPEN:
 	f, err := os.Open(configPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) && tries == 0 && mayInitConfig {
-			if err := initializeConfig(configPath); err != nil {
+			if err := initialize(configPath); err != nil {
 				return nil, err
 			}
 			tries++
@@ -56,7 +56,7 @@ OPEN:
 	return &config, nil
 }
 
-func initializeConfig(configPath string) error {
+func initialize(configPath string) error {
 	fmt.Printf("Initializing config in %s\n", configPath)
 	home, err := os.UserHomeDir()
 	if err != nil {
