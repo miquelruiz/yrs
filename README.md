@@ -1,3 +1,6 @@
+[![build](https://github.com/miquelruiz/yrs/actions/workflows/build.yml/badge.svg)](https://github.com/miquelruiz/yrs/actions/workflows/build.yml)
+[![test](https://github.com/miquelruiz/yrs/actions/workflows/test.yml/badge.svg)](https://github.com/miquelruiz/yrs/actions/workflows/test.yml)
+
 # YouTube RSS Subscriber
 
 YouTube RSS Subscriber (`yrs`) allows you to subscribe to YouTube channels without the
