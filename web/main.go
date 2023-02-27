@@ -65,19 +65,28 @@ func (w *WebYrs) listVideos(c *gin.Context) {
 		}
 	}
 	c.HTML(http.StatusOK, "videos", gin.H{
-		"rootUrl": rootUrl,
-		"videos":  videos,
-		"error":   err,
+		"show_update": false,
+		"rootUrl":     rootUrl,
+		"videos":      videos,
+		"error":       err,
 	})
 }
 
 func (w *WebYrs) update(c *gin.Context) {
-	y := yrs.Yrs(*w)
-	videos, err := y.Update()
+	var videos []yrs.Video
+	var err error
+	show_no_new := false
+	if c.Request.Method == "POST" {
+		y := yrs.Yrs(*w)
+		videos, err = y.Update()
+		show_no_new = true
+	}
 	c.HTML(http.StatusOK, "videos", gin.H{
-		"rootUrl": rootUrl,
-		"videos":  videos,
-		"error":   err,
+		"show_update": true,
+		"show_no_new": show_no_new,
+		"rootUrl":     rootUrl,
+		"videos":      videos,
+		"error":       err,
 	})
 }
 
@@ -119,7 +128,9 @@ func main() {
 
 	r.GET(buildUrl("/list-channels"), wy.listChannels)
 	r.GET(buildUrl("/list-videos"), wy.listVideos)
+
 	r.GET(buildUrl("/update"), wy.update)
+	r.POST(buildUrl("/update"), wy.update)
 
 	r.GET(buildUrl("/"), index)
 
