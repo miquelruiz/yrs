@@ -10,6 +10,7 @@ require (
 	github.com/mmcdole/gofeed v1.2.0
 	github.com/spf13/cobra v1.6.1
 	golang.org/x/net v0.7.0
+	golang.org/x/tools v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

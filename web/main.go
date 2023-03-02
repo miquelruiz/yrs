@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -13,9 +14,12 @@ import (
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/tools/blog/atom"
 )
 
-type WebYrs yrs.Yrs
+const (
+	ENTRIES_IN_FEED = 40
+)
 
 var (
 	rootUrl    string
@@ -23,6 +27,8 @@ var (
 	address    string
 	port       int
 )
+
+type WebYrs yrs.Yrs
 
 func init() {
 	flag.StringVar(&rootUrl, "root-url", "", "Root of the URL where the app will be served")
@@ -51,24 +57,28 @@ func (w *WebYrs) listChannels(c *gin.Context) {
 	})
 }
 
-func (w *WebYrs) listVideos(c *gin.Context) {
+func (w *WebYrs) getVideos(n int) ([]yrs.Video, error) {
 	y := yrs.Yrs(*w)
 	videos, err := y.GetVideos()
+	if n != 0 && len(videos) > n {
+		videos = videos[len(videos)-n:]
+	}
+	return videos, err
+}
+
+func (w *WebYrs) listVideos(c *gin.Context) {
+	var parseErr error
+	lastInt := 0
 	last := c.DefaultQuery("last", "20")
 	if last != "all" {
-		lastInt, err := strconv.Atoi(last)
-		if err != nil {
-			lastInt = len(videos)
-		}
-		if len(videos) > lastInt {
-			videos = videos[len(videos)-lastInt:]
-		}
+		lastInt, parseErr = strconv.Atoi(last)
 	}
+	videos, err := w.getVideos(lastInt)
 	c.HTML(http.StatusOK, "videos", gin.H{
 		"show_update": false,
 		"rootUrl":     rootUrl,
 		"videos":      videos,
-		"error":       err,
+		"error":       errors.Join(err, parseErr),
 	})
 }
 
@@ -88,6 +98,32 @@ func (w *WebYrs) update(c *gin.Context) {
 		"videos":      videos,
 		"error":       err,
 	})
+}
+
+func (w *WebYrs) generateFeed(c *gin.Context) {
+	feed := atom.Feed{
+		Title: "YouTube RSS Subscriber",
+		ID:    "yrs",
+	}
+
+	videos, err := w.getVideos(ENTRIES_IN_FEED)
+	if err != nil {
+		c.XML(500, feed)
+		return
+	}
+
+	for _, v := range videos {
+		entry := atom.Entry{
+			Title:     v.Title,
+			ID:        v.ID,
+			Link:      []atom.Link{{Href: v.URL}},
+			Published: atom.TimeStr(v.Published.String()),
+			Author:    &atom.Person{Name: v.Channel.Name},
+		}
+		feed.Entry = append(feed.Entry, &entry)
+	}
+
+	c.XML(200, feed)
 }
 
 func index(c *gin.Context) {
@@ -131,6 +167,8 @@ func main() {
 
 	r.GET(buildUrl("/update"), wy.update)
 	r.POST(buildUrl("/update"), wy.update)
+
+	r.GET(buildUrl("/feed"), wy.generateFeed)
 
 	r.GET(buildUrl("/"), index)
 
