@@ -18,6 +18,7 @@ COPY --from=builder /root/yrs/web/ /opt/yrs
 
 VOLUME [ "/data" ]
 
+ENV GIN_MODE=release
 ENV PORT=8080
 ENV ROOT_URL=""
 EXPOSE $PORT
