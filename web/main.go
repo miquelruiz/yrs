@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/miquelruiz/yrs/internal/config"
 	"github.com/miquelruiz/yrs/pkg/yrs"
@@ -18,7 +22,8 @@ import (
 )
 
 const (
-	ENTRIES_IN_FEED = 40
+	ENTRIES_IN_FEED             = 40
+	DEFAULT_UPDATE_INTERVAL_SEC = 3600
 )
 
 var (
@@ -144,18 +149,7 @@ func cleanRootUrl() {
 	)
 }
 
-func main() {
-	config, err := config.Load(configPath)
-	if err != nil {
-		panic(err)
-	}
-
-	y, err := yrs.New(config.DatabaseDriver, config.DatabaseUrl)
-	if err != nil {
-		panic(err)
-	}
-
-	wy := WebYrs(*y)
+func runWebServer(wy *WebYrs) *http.Server {
 	r := gin.Default()
 	r.HTMLRender = createRender()
 
@@ -173,7 +167,67 @@ func main() {
 	r.GET(buildUrl("/"), index)
 
 	addr := fmt.Sprintf("%s:%d", address, port)
-	if err := r.Run(addr); err != nil {
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	return srv
+}
+
+func runUpdater(wy *WebYrs, quit chan os.Signal) *time.Ticker {
+	y := yrs.Yrs(*wy)
+	ticker := time.NewTicker(DEFAULT_UPDATE_INTERVAL_SEC * time.Second)
+	go func() {
+		for {
+			select {
+			case <-quit:
+				return
+			case <-ticker.C:
+				if _, err := y.Update(); err != nil {
+					log.Println(err)
+				}
+			}
+		}
+	}()
+	return ticker
+}
+
+func main() {
+	config, err := config.Load(configPath)
+	if err != nil {
+		panic(err)
+	}
+
+	y, err := yrs.New(config.DatabaseDriver, config.DatabaseUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	wy := WebYrs(*y)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+
+	srv := runWebServer(&wy)
+	ticker := runUpdater(&wy, quit)
+	defer ticker.Stop()
+
+	// Block until a signal is received.
+	<-quit
+	log.Println("Shutting down...")
+	close(quit)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
+
+	log.Println("Done")
 }
