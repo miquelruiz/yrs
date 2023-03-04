@@ -5,6 +5,8 @@ FROM golang:1.20-alpine as builder
 
 RUN apk add build-base
 COPY . /root/yrs
+WORKDIR /root/yrs
+RUN ["make", "gen"]
 WORKDIR /root/yrs/web
 RUN ["go", "build", "-o", "yrs-web", "."]
 

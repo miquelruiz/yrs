@@ -4,9 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io/fs"
-	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -15,29 +12,6 @@ import (
 )
 
 const (
-	initStmt = `
-CREATE TABLE channels (
-	id VARCHAR(64) NOT NULL,
-	url VARCHAR(256) NOT NULL,
-	name VARCHAR(64) NOT NULL,
-	rss VARCHAR(256) NOT NULL,
-	autodownload INTEGER NOT NULL,
-	PRIMARY KEY (id)
-);
-CREATE TABLE videos (
-	id VARCHAR(64) NOT NULL,
-	url VARCHAR(256) NOT NULL,
-	title VARCHAR(256) NOT NULL,
-	published DATETIME NOT NULL,
-	channel_id INTEGER NOT NULL,
-	downloaded INTEGER NOT NULL,
-	PRIMARY KEY (id),
-	CONSTRAINT fk_channel
-		FOREIGN KEY(channel_id)
-		REFERENCES channels (id)
-		ON DELETE CASCADE
-);`
-
 	urlFormat = "https://www.youtube.com/channel/%s"
 	rssFormat = "https://www.youtube.com/feeds/videos.xml?channel_id=%s"
 )
@@ -47,23 +21,11 @@ type Yrs struct {
 }
 
 func New(driver, dsn string) (*Yrs, error) {
-	db, err := sql.Open(driver, dsn)
+	// Check if there's any schema migrations to run. That function is in
+	// charge of creating the db if it doesn't exist.
+	db, err := ManageSchema(driver, dsn)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't open the database: %w", err)
-	}
-	dbPath := strings.TrimPrefix(dsn, "file:")
-	fileinfo, err := os.Stat(dbPath)
-	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			return nil, fmt.Errorf("couldn't stat the db '%s': %w", dbPath, err)
-		}
-		err = initializeDb(driver, dsn)
-	} else if fileinfo.Size() == 0 {
-		err = initializeDb(driver, dsn)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("error initializing db: %w", err)
+		return nil, err
 	}
 
 	_, err = db.Exec("PRAGMA foreign_keys=on")
@@ -125,19 +87,6 @@ func (y *Yrs) forEachVideo(f func(*Video)) error {
 		f(&v)
 	}
 
-	return nil
-}
-
-func initializeDb(driver, dsn string) error {
-	db, err := sql.Open(driver, dsn)
-	if err != nil {
-		return fmt.Errorf("failed to create database: %w", err)
-	}
-
-	_, err = db.Exec(initStmt)
-	if err != nil {
-		return fmt.Errorf("failed to create schema: %w", err)
-	}
 	return nil
 }
 

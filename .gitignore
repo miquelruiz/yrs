@@ -1,2 +1,4 @@
+config.yml
 *.db
-youtube-rss-subscriber-go
+pkg/yrs/db/
+main
