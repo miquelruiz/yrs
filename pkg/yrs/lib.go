@@ -151,18 +151,18 @@ func (y *Yrs) Subscribe(channelStr string) error {
 func (y *Yrs) subscribeChannel(channel Channel, feed *gofeed.Feed) error {
 	tx, err := y.db.Begin()
 	if err != nil {
-		return err
+		return fmt.Errorf("error on begin: %w", err)
 	}
 
 	if err := y.insertChannel(tx, channel); err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("error inserting channel: %w", err)
 	}
 
 	err = updateChannelVideos(tx, &channel, nil, feed)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("error updating channel videos: %w", err)
 	}
 
 	return tx.Commit()

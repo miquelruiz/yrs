@@ -6,41 +6,34 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/mmcdole/gofeed"
 	ext "github.com/mmcdole/gofeed/extensions"
 )
 
-func TestNew(t *testing.T) {
-	dsn := fmt.Sprintf("file:%s/yrs.db", os.TempDir())
-	_, err := New("sqlite3", dsn)
+func mustCreateYrs(t *testing.T) *Yrs {
+	tempdir, err := os.MkdirTemp(os.TempDir(), "*")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
+	dsn := fmt.Sprintf("file:%s/yrs.db", tempdir)
+	t.Cleanup(func() {
+		os.RemoveAll(tempdir)
+	})
 
-	_, err = os.Stat(strings.TrimPrefix(dsn, "file:"))
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestSubscribe(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	y, err := New("sqlite3", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	mock.ExpectBegin()
-	mock.ExpectPrepare("INSERT INTO channels .+").
-		ExpectExec().
-		WithArgs("id", "url", "name", "rss").
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectPrepare("INSERT INTO videos .+").
-		ExpectExec().
-		WithArgs("videoId", "link", "title", sqlmock.AnyArg(), "channelId", 0).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectCommit()
+	_, err = os.Stat(strings.TrimPrefix(dsn, "file:"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
+	return y
+}
+
+func setupFixtures(y *Yrs) error {
 	feed := &gofeed.Feed{
 		Items: []*gofeed.Item{
 			{
@@ -49,25 +42,105 @@ func TestSubscribe(t *testing.T) {
 				Link:      "link",
 				Extensions: ext.Extensions{"yt": map[string][]ext.Extension{
 					"videoId":   {{Value: "videoId"}},
-					"channelId": {{Value: "channelId"}},
+					"channelId": {{Value: "id"}},
 				}},
 			},
 		},
 	}
 
-	y := &Yrs{db}
-	err = y.subscribeChannel(Channel{
+	return y.subscribeChannel(Channel{
 		ID:           "id",
 		URL:          "url",
 		Name:         "name",
 		RSS:          "rss",
 		Autodownload: false,
 	}, feed)
+}
+
+func TestChannel(t *testing.T) {
+	y := mustCreateYrs(t)
+	err := setupFixtures(y)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []struct {
+		got func(Channel) string
+		exp string
+	}{
+		{got: func(c Channel) string { return c.ID }, exp: "id"},
+		{got: func(c Channel) string { return c.URL }, exp: "url"},
+		{got: func(c Channel) string { return c.Name }, exp: "name"},
+		{got: func(c Channel) string { return c.RSS }, exp: "rss"},
+	}
+
+	channels, err := y.GetChannels()
 	if err != nil {
 		t.Error(err)
 	}
 
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
+	if len(channels) != 1 {
+		t.Fatalf("Unexpected number of channels. Got %d, Expected %d", len(channels), 1)
+	}
+
+	for _, test := range testCases {
+		got := test.got(channels[0])
+		if got != test.exp {
+			t.Errorf("Unexpected channel value. Got: %s Expected: %s", got, test.exp)
+		}
+	}
+}
+
+func TestVideos(t *testing.T) {
+	y := mustCreateYrs(t)
+	err := setupFixtures(y)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []struct {
+		got func(Video) string
+		exp string
+	}{
+		{got: func(v Video) string { return v.ID }, exp: "videoId"},
+		{got: func(v Video) string { return v.Title }, exp: "title"},
+		{got: func(v Video) string { return v.ChannelId }, exp: "id"},
+	}
+
+	videos, err := y.GetVideos()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(videos) != 1 {
+		t.Fatalf("Unexpected number of videos. Got %d, Expected %d", len(videos), 1)
+	}
+
+	for _, test := range testCases {
+		got := test.got(videos[0])
+		if got != test.exp {
+			t.Errorf("Unexpected video value. Got: %s Expected: %s", got, test.exp)
+		}
+	}
+}
+
+func TestSearch(t *testing.T) {
+	y := mustCreateYrs(t)
+	err := setupFixtures(y)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r, err := y.Search("title")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(r) != 1 {
+		t.Fatalf("Unexpected number of search results. Got %d, Expected %d", len(r), 1)
+	}
+
+	if r[0].ID != "videoId" || r[0].Title != "title" || r[0].Channel != "name" {
+		t.Fatalf("Unexpected search result. Got %s, Expected {videoId title name}", r)
 	}
 }

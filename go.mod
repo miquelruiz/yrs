@@ -3,7 +3,6 @@ module github.com/miquelruiz/yrs
 go 1.20
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/amacneil/dbmate/v2 v2.0.1
 	github.com/gin-contrib/multitemplate v0.0.0-20230212012517-45920c92c271
 	github.com/gin-gonic/gin v1.9.0
