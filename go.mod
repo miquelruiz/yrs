@@ -9,6 +9,7 @@ require (
 	github.com/gin-gonic/gin v1.9.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/mmcdole/gofeed v1.2.0
+	github.com/samber/lo v1.37.0
 	github.com/spf13/cobra v1.6.1
 	golang.org/x/net v0.7.0
 	golang.org/x/tools v0.6.0
@@ -40,6 +41,7 @@ require (
 	github.com/ugorji/go/codec v1.2.10 // indirect
 	golang.org/x/arch v0.2.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect

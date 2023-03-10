@@ -18,6 +18,7 @@ import (
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
+	"github.com/samber/lo"
 	"golang.org/x/tools/blog/atom"
 )
 
@@ -117,18 +118,37 @@ func (w *WebYrs) generateFeed(c *gin.Context) {
 		return
 	}
 
-	for _, v := range videos {
-		entry := atom.Entry{
+	feed.Entry = lo.Map(videos, func(v yrs.Video, _ int) *atom.Entry {
+		return &atom.Entry{
 			Title:     v.Title,
 			ID:        v.ID,
 			Link:      []atom.Link{{Href: v.URL}},
 			Published: atom.TimeStr(v.Published.String()),
 			Author:    &atom.Person{Name: v.Channel.Name},
 		}
-		feed.Entry = append(feed.Entry, &entry)
-	}
+	})
 
 	c.XML(200, feed)
+}
+
+func (w *WebYrs) search(c *gin.Context) {
+	y := yrs.Yrs(*w)
+	results, err := y.Search(c.Query("term"))
+
+	var videos []yrs.Video
+	if err == nil {
+		ids := lo.Map(results, func(r yrs.SearchResult, _ int) string {
+			return r.ID
+		})
+		videos, err = y.GetVideosByID(ids)
+	}
+
+	c.HTML(http.StatusOK, "videos", gin.H{
+		"show_update": false,
+		"rootUrl":     rootUrl,
+		"videos":      videos,
+		"error":       err,
+	})
 }
 
 func index(c *gin.Context) {
@@ -163,6 +183,7 @@ func runWebServer(wy *WebYrs) *http.Server {
 	r.POST(buildUrl("/update"), wy.update)
 
 	r.GET(buildUrl("/feed"), wy.generateFeed)
+	r.GET(buildUrl("/search"), wy.search)
 
 	r.GET(buildUrl("/"), index)
 

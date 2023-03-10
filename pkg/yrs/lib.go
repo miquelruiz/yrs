@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/mmcdole/gofeed"
+	"github.com/samber/lo"
 )
 
 const (
@@ -315,4 +317,41 @@ func (y *Yrs) Search(s string) ([]SearchResult, error) {
 	}
 
 	return results, nil
+}
+
+func (y *Yrs) GetVideosByID(ids []string) ([]Video, error) {
+	query := `
+		SELECT
+			v.id, v.title, v.url, v.published, v.channel_id, v.downloaded,
+			c.id, c.url, c.name, c.rss, c.autodownload
+		FROM videos v
+		JOIN channels c ON (v.channel_id=c.id)
+		WHERE v.id IN (%s)
+	`
+	placeholders := strings.Join(strings.Split(strings.Repeat("?", len(ids)), ""), ",")
+
+	s := lo.Map(ids, func(item string, index int) interface{} {
+		return interface{}(&item)
+	})
+	rows, err := y.db.Query(fmt.Sprintf(query, placeholders), s...)
+	if err != nil {
+		return nil, err
+	}
+
+	videos := make([]Video, 0)
+	for rows.Next() {
+		v := Video{}
+		c := Channel{}
+		err = rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Published, &v.ChannelId, &v.Downloaded,
+			&c.ID, &c.URL, &c.Name, &c.RSS, &c.Autodownload,
+		)
+		if err != nil {
+			return nil, err
+		}
+		v.Channel = &c
+		videos = append(videos, v)
+	}
+
+	return videos, nil
 }
