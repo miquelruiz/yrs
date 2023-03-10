@@ -85,6 +85,13 @@ var (
 			return yrs.Unsubscribe(args[0])
 		},
 	}
+
+	searchCmd = &cobra.Command{
+		Use:   "search <search term>",
+		Short: "Search video titles and channels",
+		Args:  cobra.ExactArgs(1),
+		RunE:  search,
+	}
 )
 
 func getChannelID(r io.Reader) string {
@@ -148,6 +155,29 @@ func update(cmd *cobra.Command, args []string) error {
 			v.Channel.Name,
 			v.URL,
 		)
+	}
+
+	return nil
+}
+
+func search(cmd *cobra.Command, args []string) error {
+	yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
+	results, err := yrs.Search(args[0])
+	if err != nil {
+		return err
+	}
+
+	if len(results) == 0 {
+		return nil
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 5, 2, 3, ' ', 0)
+	defer w.Flush()
+	fmt.Fprintln(w, "ID\tTitle\tChannel\tURL")
+
+	for _, r := range results {
+		url := fmt.Sprintf("https://www.youtube.com/watch?v=%s", r.ID)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", r.ID, r.Title, r.Channel, url)
 	}
 
 	return nil
@@ -225,6 +255,7 @@ func main() {
 	rootCmd.AddCommand(listVideosCmd)
 	rootCmd.AddCommand(listChannelsCmd)
 	rootCmd.AddCommand(unsubscribeCmd)
+	rootCmd.AddCommand(searchCmd)
 
 	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
 		panic(err)

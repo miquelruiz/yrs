@@ -8,7 +8,7 @@ COPY . /root/yrs
 WORKDIR /root/yrs
 RUN ["make", "gen"]
 WORKDIR /root/yrs/web
-RUN ["go", "build", "-o", "yrs-web", "."]
+RUN ["go", "build", "--tags", "fts5", "-o", "yrs-web", "."]
 
 #--------------
 # Runner

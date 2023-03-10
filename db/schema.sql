@@ -20,6 +20,14 @@ CREATE TABLE videos (
 		REFERENCES channels (id)
 		ON DELETE CASCADE
 );
+CREATE VIRTUAL TABLE videos_fts USING fts5(id, title, channel)
+/* videos_fts(id,title,channel) */;
+CREATE TABLE IF NOT EXISTS 'videos_fts_data'(id INTEGER PRIMARY KEY, block BLOB);
+CREATE TABLE IF NOT EXISTS 'videos_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS 'videos_fts_content'(id INTEGER PRIMARY KEY, c0, c1, c2);
+CREATE TABLE IF NOT EXISTS 'videos_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
+CREATE TABLE IF NOT EXISTS 'videos_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
-  ('01');
+  ('01'),
+  ('02');

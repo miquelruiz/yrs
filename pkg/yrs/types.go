@@ -21,3 +21,9 @@ type Video struct {
 	Downloaded bool
 	Channel    *Channel
 }
+
+type SearchResult struct {
+	ID      string
+	Title   string
+	Channel string
+}

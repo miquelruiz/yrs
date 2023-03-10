@@ -234,6 +234,13 @@ func updateChannelVideos(tx *sql.Tx, c *Channel, vc chan Video, feed *gofeed.Fee
 		return err
 	}
 
+	ftsInsert, err := tx.Prepare(
+		`INSERT INTO videos_fts (id, title, channel) VALUES (?, ?, ?)`,
+	)
+	if err != nil {
+		return err
+	}
+
 	for _, item := range feed.Items {
 		date, err := time.Parse(time.RFC3339, item.Published)
 		if err != nil {
@@ -256,13 +263,17 @@ func updateChannelVideos(tx *sql.Tx, c *Channel, vc chan Video, feed *gofeed.Fee
 		_, err = insert.Exec(
 			v.ID, v.URL, v.Title, v.Published, v.ChannelId, 0,
 		)
-
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) {
 			if !errors.Is(sqliteErr.ExtendedCode, sqlite3.ErrConstraintPrimaryKey) {
 				return err
 			}
 			continue
+		}
+
+		_, err = ftsInsert.Exec(v.ID, v.Title, c.Name)
+		if err != nil {
+			return err
 		}
 
 		if vc != nil {
@@ -281,4 +292,27 @@ func (y *Yrs) Unsubscribe(channelID string) error {
 
 	_, err = delete.Exec(channelID)
 	return err
+}
+
+func (y *Yrs) Search(s string) ([]SearchResult, error) {
+	rows, err := y.db.Query(
+		"SELECT * FROM videos_fts WHERE videos_fts MATCH ? ORDER BY rank",
+		s,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	results := make([]SearchResult, 0)
+	for rows.Next() {
+		res := SearchResult{}
+		err = rows.Scan(&res.ID, &res.Title, &res.Channel)
+		if err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		results = append(results, res)
+	}
+
+	return results, nil
 }
