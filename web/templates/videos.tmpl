@@ -2,6 +2,13 @@
 <div class="update-videos">
   <form action="" method="post">
     <button>Update</button>
+    {{ if .showNew }}
+      {{- if (gt .newVideos 0) }}
+    <span>Found {{ .newVideos }} new videos</span>
+      {{- else }}
+    <span>No new videos found</span>
+      {{- end }}
+    {{- end }}
   </form>
 </div>
 {{ if .videos }}

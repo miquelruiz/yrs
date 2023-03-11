@@ -80,17 +80,22 @@ func (w *WebYrs) listVideos(c *gin.Context) {
 		lastInt, parseErr = strconv.Atoi(last)
 	}
 
+	var newVideos []yrs.Video
 	var updateErr error
+	showNew := false
 	if c.Request.Method == "POST" {
 		y := yrs.Yrs(*w)
-		_, updateErr = y.Update()
+		newVideos, updateErr = y.Update()
+		showNew = true
 	}
 	videos, getVErr := w.getVideos(lastInt)
 
 	c.HTML(http.StatusOK, "videos", gin.H{
-		"rootUrl": rootUrl,
-		"videos":  videos,
-		"error":   errors.Join(updateErr, getVErr, parseErr),
+		"rootUrl":   rootUrl,
+		"videos":    videos,
+		"newVideos": len(newVideos),
+		"showNew":   showNew,
+		"error":     errors.Join(updateErr, getVErr, parseErr),
 	})
 }
 
