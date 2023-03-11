@@ -79,30 +79,18 @@ func (w *WebYrs) listVideos(c *gin.Context) {
 	if last != "all" {
 		lastInt, parseErr = strconv.Atoi(last)
 	}
-	videos, err := w.getVideos(lastInt)
-	c.HTML(http.StatusOK, "videos", gin.H{
-		"show_update": false,
-		"rootUrl":     rootUrl,
-		"videos":      videos,
-		"error":       errors.Join(err, parseErr),
-	})
-}
 
-func (w *WebYrs) update(c *gin.Context) {
-	var videos []yrs.Video
-	var err error
-	show_no_new := false
+	var updateErr error
 	if c.Request.Method == "POST" {
 		y := yrs.Yrs(*w)
-		videos, err = y.Update()
-		show_no_new = true
+		_, updateErr = y.Update()
 	}
+	videos, getVErr := w.getVideos(lastInt)
+
 	c.HTML(http.StatusOK, "videos", gin.H{
-		"show_update": true,
-		"show_no_new": show_no_new,
-		"rootUrl":     rootUrl,
-		"videos":      videos,
-		"error":       err,
+		"rootUrl": rootUrl,
+		"videos":  videos,
+		"error":   errors.Join(updateErr, getVErr, parseErr),
 	})
 }
 
@@ -178,9 +166,7 @@ func runWebServer(wy *WebYrs) *http.Server {
 
 	r.GET(buildUrl("/list-channels"), wy.listChannels)
 	r.GET(buildUrl("/list-videos"), wy.listVideos)
-
-	r.GET(buildUrl("/update"), wy.update)
-	r.POST(buildUrl("/update"), wy.update)
+	r.POST(buildUrl("/list-videos"), wy.listVideos)
 
 	r.GET(buildUrl("/feed"), wy.generateFeed)
 	r.GET(buildUrl("/search"), wy.search)

@@ -1,9 +1,9 @@
 {{ define "content" }}
-{{ if .show_update }}
-<form action="" method="post">
-  <button>Update</button>
-</form>
-{{ end }}
+<div class="update-videos">
+  <form action="" method="post">
+    <button>Update</button>
+  </form>
+</div>
 {{ if .videos }}
 <table class="table">
   <thead>
@@ -27,7 +27,5 @@
   {{ end }}
   </tbody>
 </table>
-{{ else if .show_no_new }}
-<p>No new videos</p>
 {{ end }}
 {{ end }}

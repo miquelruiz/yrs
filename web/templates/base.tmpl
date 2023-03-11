@@ -8,6 +8,7 @@
     <meta name="generator" content="Hugo 0.104.2">
     <title>Fixed top navbar example · Bootstrap v5.2</title>
     <link href="{{ .rootUrl }}/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ .rootUrl }}/css/main.css" rel="stylesheet">
 
     <style>
       .bd-placeholder-img {
@@ -70,7 +71,7 @@
 
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Fixed navbar</a>
+    <a class="navbar-brand" href="#">YouTube RSS Subscriber</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -84,12 +85,6 @@
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{{ .rootUrl }}/list-videos">Videos</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ .rootUrl }}/update">Update</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link disabled">Disabled</a>
         </li>
       </ul>
       <form class="d-flex" role="search" action="{{ .rootUrl}}/search" method="get">

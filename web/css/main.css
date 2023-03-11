@@ -3,3 +3,7 @@ body {
   min-height: 75rem;
   padding-top: 4.5rem;
 }
+
+div.update-videos {
+  margin-bottom: 2rem;
+}
