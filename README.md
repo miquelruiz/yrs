@@ -14,7 +14,7 @@ happen via `yrs update`, running it either manually or via cron.
 ## Installation
 
 ```
-go install github.com/miquelruiz/yrs/cmd/yrs@latest
+go install --tags fts5 github.com/miquelruiz/yrs/cmd/yrs@latest
 ```
 
 ## Basic usage

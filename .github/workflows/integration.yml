@@ -17,7 +17,7 @@ jobs:
           go-version: 1.20.1
 
       - name: Install yrs
-        run: go install github.com/miquelruiz/yrs/cmd/yrs@latest
+        run: go install --tags fts5 github.com/miquelruiz/yrs/cmd/yrs@latest
 
       - name: Subscribe to some channels
         run: |
