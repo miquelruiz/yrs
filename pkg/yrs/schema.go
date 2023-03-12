@@ -14,7 +14,6 @@ import (
 // Can't use ".." in an embed pattern, so migrations need to be in this same
 // directory
 
-//go:generate cp -r ../../db ./
 //go:embed db/migrations/*.sql
 var migrationsFS embed.FS
 

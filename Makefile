@@ -5,13 +5,10 @@ all: fmt test
 fmt:
 	go fmt ./...
 
-test: gen
+test:
 	go test --tags fts5 -v ./...
 
-gen:
-	go generate -v ./...
-
-build: gen
+build:
 	go build --tags fts5 -v ./...
 
 clean:
