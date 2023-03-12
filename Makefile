@@ -1,4 +1,4 @@
-.PHONY: all fmt test gen build clean
+.PHONY: all fmt test build install
 
 all: fmt test
 
@@ -11,8 +11,8 @@ test:
 build:
 	go build --tags fts5 -v ./...
 
-clean:
-	rm -rf pkg/yrs/db
-
 update list-channels:
-	go run --tags fts5 cmd/yrs/main.go --config config.yml $@
+	go run --tags fts5 ./cmd/yrs --config config.yml $@
+
+install:
+	go install --tags fts5 -ldflags="-X 'github.com/miquelruiz/yrs/internal/vcs.Version=$(shell git describe)'" ./cmd/yrs

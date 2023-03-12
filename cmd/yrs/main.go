@@ -9,6 +9,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/miquelruiz/yrs/internal/config"
+	"github.com/miquelruiz/yrs/internal/vcs"
 	"github.com/miquelruiz/yrs/pkg/yrs"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -91,6 +92,14 @@ var (
 		Short: "Search video titles and channels",
 		Args:  cobra.ExactArgs(1),
 		RunE:  search,
+	}
+
+	versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print version to stdout",
+		Run: func(_ *cobra.Command, _ []string) {
+			fmt.Printf("Version %s\nBuilt on %s\n", vcs.Version, vcs.Time)
+		},
 	}
 )
 
@@ -256,6 +265,7 @@ func main() {
 	rootCmd.AddCommand(listChannelsCmd)
 	rootCmd.AddCommand(unsubscribeCmd)
 	rootCmd.AddCommand(searchCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
 		panic(err)
