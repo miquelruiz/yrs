@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -54,8 +55,16 @@ func createRender() multitemplate.Renderer {
 }
 
 func (w *WebYrs) listChannels(c *gin.Context) {
+	var err error
 	y := yrs.Yrs(*w)
-	channels, err := y.GetChannels()
+	errStr := c.Query("error")
+	if errStr != "" {
+		err = errors.New(errStr)
+	}
+	channels, errGet := y.GetChannels()
+	if err != nil || errGet != nil {
+		err = errors.Join(err, errGet)
+	}
 	c.HTML(http.StatusOK, "listChannels", gin.H{
 		"rootUrl":  rootUrl,
 		"channels": channels,
@@ -144,6 +153,16 @@ func (w *WebYrs) search(c *gin.Context) {
 	})
 }
 
+func (w *WebYrs) subscribe(c *gin.Context) {
+	var errArg string
+	y := yrs.Yrs(*w)
+	err := y.Subscribe(c.PostForm("channelID"))
+	if err != nil {
+		errArg = fmt.Sprintf("?error=%s", url.QueryEscape(err.Error()))
+	}
+	c.Redirect(303, buildUrl("/list-channels")+errArg)
+}
+
 func index(c *gin.Context) {
 	c.HTML(http.StatusOK, "index", gin.H{"rootUrl": rootUrl})
 }
@@ -172,6 +191,8 @@ func runWebServer(wy *WebYrs) *http.Server {
 	r.GET(buildUrl("/list-channels"), wy.listChannels)
 	r.GET(buildUrl("/list-videos"), wy.listVideos)
 	r.POST(buildUrl("/list-videos"), wy.listVideos)
+
+	r.POST(buildUrl("/subscribe"), wy.subscribe)
 
 	r.GET(buildUrl("/feed"), wy.generateFeed)
 	r.GET(buildUrl("/search"), wy.search)
