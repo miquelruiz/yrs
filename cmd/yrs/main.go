@@ -124,7 +124,8 @@ LOOP:
 				attrMap[a.Key] = a.Val
 			}
 
-			if attrMap["itemprop"] == "channelId" {
+			if attrMap["itemprop"] == "identifier" ||
+				attrMap["itemprop"] == "channelId" {
 				channelID = attrMap["content"]
 				break LOOP
 			}
