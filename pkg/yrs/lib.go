@@ -1,6 +1,7 @@
 package yrs
 
 import (
+	"crypto/sha1"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -14,7 +15,6 @@ import (
 )
 
 const (
-	urlFormat = "https://www.youtube.com/channel/%s"
 	rssFormat = "https://www.youtube.com/feeds/videos.xml?channel_id=%s"
 )
 
@@ -132,16 +132,22 @@ func (y *Yrs) GetVideos() ([]Video, error) {
 	return rowSlice, err
 }
 
-func (y *Yrs) Subscribe(channelStr string) error {
-	rss := fmt.Sprintf(rssFormat, channelStr)
+func (y *Yrs) SubscribeYouTubeID(channelStr string) error {
+	return y.Subscribe(fmt.Sprintf(rssFormat, channelStr))
+}
+
+func (y *Yrs) Subscribe(rss string) error {
 	feed, err := gofeed.NewParser().ParseURL(rss)
 	if err != nil {
 		return fmt.Errorf("error parsing RSS url %s: %w", rss, err)
 	}
 
+	s := sha1.New()
+	s.Write([]byte(rss))
+
 	return y.subscribeChannel(Channel{
-		ID:           channelStr,
-		URL:          fmt.Sprintf(urlFormat, channelStr),
+		ID:           fmt.Sprintf("%x", s.Sum(nil))[:24],
+		URL:          feed.Link,
 		Name:         feed.Title,
 		RSS:          rss,
 		Autodownload: false,
@@ -244,7 +250,7 @@ func updateChannelVideos(tx *sql.Tx, c *Channel, vc chan Video, feed *gofeed.Fee
 	}
 
 	for _, item := range feed.Items {
-		date, err := time.Parse(time.RFC3339, item.Published)
+		date, err := parseDate(item.Published)
 		if err != nil {
 			return fmt.Errorf(
 				"error parsing date (%s) for video %s: %w",
@@ -254,11 +260,11 @@ func updateChannelVideos(tx *sql.Tx, c *Channel, vc chan Video, feed *gofeed.Fee
 			)
 		}
 		v := Video{
-			ID:         item.Extensions["yt"]["videoId"][0].Value,
+			ID:         getVideoID(item),
 			URL:        item.Link,
 			Title:      item.Title,
 			Published:  date,
-			ChannelId:  item.Extensions["yt"]["channelId"][0].Value,
+			ChannelId:  c.ID,
 			Downloaded: false,
 			Channel:    c,
 		}
@@ -354,4 +360,28 @@ func (y *Yrs) GetVideosByID(ids []string) ([]Video, error) {
 	}
 
 	return videos, nil
+}
+
+func parseDate(dateStr string) (time.Time, error) {
+	formats := []string{
+		time.RFC3339,
+		time.RFC850,
+		time.RFC1123Z,
+	}
+
+	var date time.Time
+	var err error
+	for _, format := range formats {
+		date, err = time.Parse(format, dateStr)
+		if err == nil {
+			break
+		}
+	}
+	return date, err
+}
+
+func getVideoID(item *gofeed.Item) string {
+	s := sha1.New()
+	s.Write([]byte(item.Link))
+	return fmt.Sprintf("%x", s.Sum(nil))[:10]
 }

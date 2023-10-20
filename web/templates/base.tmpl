@@ -45,9 +45,14 @@
 </div>
 {{- end }}
 {{- block "content" . }}
-<form action="{{ .rootUrl }}/subscribe" method="post">
+<form action="{{ .rootUrl }}/subscribeYouTube" method="post">
   <label for="url">Channel ID: </label>
   <input type="text" name="channelID" id="channelID" required>
+  <input type="submit" value="Subscribe">
+</form>
+<form action="{{ .rootUrl }}/subscribe" method="post">
+  <label for="url">RSS URL: </label>
+  <input type="text" name="rss" id="rss" required>
   <input type="submit" value="Subscribe">
 </form>
 {{- end }}

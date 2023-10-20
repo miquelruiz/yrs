@@ -58,9 +58,16 @@ var (
 		RunE:  update,
 	}
 
-	subscribeCmd = &cobra.Command{
-		Use:   "subscribe <YouTube channel URL>",
+	subscribeYouTubeCmd = &cobra.Command{
+		Use:   "subscribe-yt <YouTube channel URL>",
 		Short: "Subscribe to the given channel",
+		Args:  cobra.ExactArgs(1),
+		RunE:  subscribeYouTube,
+	}
+
+	subscribeCmd = &cobra.Command{
+		Use:   "subscribe <rss url>",
+		Short: "Subscribe to the given feed",
 		Args:  cobra.ExactArgs(1),
 		RunE:  subscribe,
 	}
@@ -135,7 +142,7 @@ LOOP:
 	return channelID
 }
 
-func subscribe(cmd *cobra.Command, args []string) error {
+func subscribeYouTube(cmd *cobra.Command, args []string) error {
 	res, err := http.Get(args[0])
 	if err != nil {
 		return err
@@ -148,7 +155,12 @@ func subscribe(cmd *cobra.Command, args []string) error {
 	}
 
 	yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
-	return yrs.Subscribe(channelID)
+	return yrs.SubscribeYouTubeID(channelID)
+}
+
+func subscribe(cmd *cobra.Command, args []string) error {
+	yrs := cmd.Context().Value(AppKey).(*yrs.Yrs)
+	return yrs.Subscribe(args[0])
 }
 
 func update(cmd *cobra.Command, args []string) error {
@@ -261,6 +273,7 @@ func main() {
 	)
 
 	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(subscribeYouTubeCmd)
 	rootCmd.AddCommand(subscribeCmd)
 	rootCmd.AddCommand(listVideosCmd)
 	rootCmd.AddCommand(listChannelsCmd)

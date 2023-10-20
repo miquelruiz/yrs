@@ -102,7 +102,7 @@ func TestVideos(t *testing.T) {
 		got func(Video) string
 		exp string
 	}{
-		{got: func(v Video) string { return v.ID }, exp: "videoId"},
+		{got: func(v Video) string { return v.ID }, exp: "4f0aa52d65"},
 		{got: func(v Video) string { return v.Title }, exp: "title"},
 		{got: func(v Video) string { return v.ChannelId }, exp: "id"},
 	}
@@ -140,7 +140,7 @@ func TestSearch(t *testing.T) {
 		t.Fatalf("Unexpected number of search results. Got %d, Expected %d", len(r), 1)
 	}
 
-	if r[0].ID != "videoId" || r[0].Title != "title" || r[0].Channel != "name" {
+	if r[0].ID != "4f0aa52d65" || r[0].Title != "title" || r[0].Channel != "name" {
 		t.Fatalf("Unexpected search result. Got %s, Expected {videoId title name}", r)
 	}
 }

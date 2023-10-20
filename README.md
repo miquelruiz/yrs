@@ -21,7 +21,7 @@ go install --tags fts5 github.com/miquelruiz/yrs/cmd/yrs@latest
 
 First you'll need to subscribe to some channels. Lets subsribe to "This Old Tony" as an example:
 ```
-$ yrs subscribe https://www.youtube.com/user/featony
+$ yrs subscribe-yt https://www.youtube.com/user/featony
 Config file created in /home/mruiz/.yrs/config.yml
 Subscribed to "This Old Tony"
 ```

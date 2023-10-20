@@ -153,10 +153,20 @@ func (w *WebYrs) search(c *gin.Context) {
 	})
 }
 
+func (w *WebYrs) subscribeYouTube(c *gin.Context) {
+	var errArg string
+	y := yrs.Yrs(*w)
+	err := y.SubscribeYouTubeID(c.PostForm("channelID"))
+	if err != nil {
+		errArg = fmt.Sprintf("?error=%s", url.QueryEscape(err.Error()))
+	}
+	c.Redirect(303, buildUrl("/list-channels")+errArg)
+}
+
 func (w *WebYrs) subscribe(c *gin.Context) {
 	var errArg string
 	y := yrs.Yrs(*w)
-	err := y.Subscribe(c.PostForm("channelID"))
+	err := y.Subscribe(c.PostForm("rss"))
 	if err != nil {
 		errArg = fmt.Sprintf("?error=%s", url.QueryEscape(err.Error()))
 	}
@@ -192,6 +202,7 @@ func runWebServer(wy *WebYrs) *http.Server {
 	r.GET(buildUrl("/list-videos"), wy.listVideos)
 	r.POST(buildUrl("/list-videos"), wy.listVideos)
 
+	r.POST(buildUrl("/subscribeYouTube"), wy.subscribeYouTube)
 	r.POST(buildUrl("/subscribe"), wy.subscribe)
 
 	r.GET(buildUrl("/feed"), wy.generateFeed)

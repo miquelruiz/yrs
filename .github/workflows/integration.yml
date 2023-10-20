@@ -21,8 +21,8 @@ jobs:
 
       - name: Subscribe to some channels
         run: |
-          ~/go/bin/yrs subscribe https://www.youtube.com/user/wintergatan2000
-          ~/go/bin/yrs subscribe https://www.youtube.com/channel/UCMrMVIBtqFW6O0-MWq26gqw
+          ~/go/bin/yrs subscribe-yt https://www.youtube.com/user/wintergatan2000
+          ~/go/bin/yrs subscribe-yt https://www.youtube.com/channel/UCMrMVIBtqFW6O0-MWq26gqw
 
       - name: List channels
         run: |
