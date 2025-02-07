@@ -24,13 +24,14 @@
     </tr>
   </thead>
   <tbody>
+  {{ $rootUrl := .rootUrl }}
   {{ range $i, $v := .videos }}
     <tr>
       <th scope="row">{{ $i }}</th>
       <td>{{ $v.ID }}</td>
       <td>{{ $v.Published.Format "2006-01-02" }}</td>
       <td>{{ $v.Title }}</td>
-      <td>{{ $v.Channel.Name }}</td>
+      <td><a href="{{ $rootUrl }}/list-videos?channel={{ $v.Channel.Name }}">{{ $v.Channel.Name }}</a></td>
       <td><a href="{{ $v.URL }}">{{ $v.URL }}</a></td>
     </tr>
   {{ end }}

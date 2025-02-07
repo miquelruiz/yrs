@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -349,6 +350,40 @@ func (y *Yrs) GetVideosByID(ids []string) ([]Video, error) {
 		v := Video{}
 		c := Channel{}
 		err = rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Published, &v.ChannelId, &v.Downloaded,
+			&c.ID, &c.URL, &c.Name, &c.RSS, &c.Autodownload,
+		)
+		if err != nil {
+			return nil, err
+		}
+		v.Channel = &c
+		videos = append(videos, v)
+	}
+
+	return videos, nil
+}
+
+func (y *Yrs) GetVideosByChannel(ch string) ([]Video, error) {
+	query := `
+		SELECT
+			v.id, v.title, v.url, v.published, v.channel_id, v.downloaded,
+			c.id, c.url, c.name, c.rss, c.autodownload
+		FROM videos v
+		JOIN channels c ON (v.channel_id=c.id)
+		WHERE c.name=?
+		ORDER BY v.published
+	`
+	log.Printf("Listing videos for channel %s", ch)
+	rows, err := y.db.Query(query, ch)
+	if err != nil {
+		return nil, err
+	}
+
+	videos := make([]Video, 0)
+	for rows.Next() {
+		v := Video{}
+		c := Channel{}
+		err := rows.Scan(
 			&v.ID, &v.Title, &v.URL, &v.Published, &v.ChannelId, &v.Downloaded,
 			&c.ID, &c.URL, &c.Name, &c.RSS, &c.Autodownload,
 		)

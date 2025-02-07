@@ -72,9 +72,8 @@ func (w *WebYrs) listChannels(c *gin.Context) {
 	})
 }
 
-func (w *WebYrs) getVideos(n int) ([]yrs.Video, error) {
-	y := yrs.Yrs(*w)
-	videos, err := y.GetVideos()
+func (w *WebYrs) getVideos(vGetter func() ([]yrs.Video, error), n int) ([]yrs.Video, error) {
+	videos, err := vGetter()
 	if n != 0 && len(videos) > n {
 		videos = videos[len(videos)-n:]
 	}
@@ -97,7 +96,19 @@ func (w *WebYrs) listVideos(c *gin.Context) {
 		newVideos, updateErr = y.Update()
 		showNew = true
 	}
-	videos, getVErr := w.getVideos(lastInt)
+
+	var videos []yrs.Video
+	var getVErr error
+	y := yrs.Yrs(*w)
+	channel := c.DefaultQuery("channel", "")
+	if channel != "" {
+		videos, getVErr = w.getVideos(
+			func() ([]yrs.Video, error) { return y.GetVideosByChannel(channel) },
+			lastInt,
+		)
+	} else {
+		videos, getVErr = w.getVideos(y.GetVideos, lastInt)
+	}
 
 	c.HTML(http.StatusOK, "videos", gin.H{
 		"rootUrl":   rootUrl,
@@ -114,7 +125,8 @@ func (w *WebYrs) generateFeed(c *gin.Context) {
 		ID:    "yrs",
 	}
 
-	videos, err := w.getVideos(ENTRIES_IN_FEED)
+	y := yrs.Yrs(*w)
+	videos, err := w.getVideos(y.GetVideos, ENTRIES_IN_FEED)
 	if err != nil {
 		c.XML(500, feed)
 		return
