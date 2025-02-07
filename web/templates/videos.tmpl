@@ -17,6 +17,7 @@
     <tr>
       <th scope="col">#</th>
       <th scope="col">ID</th>
+      <th scope="col">Published</th>
       <th scope="col">Title</th>
       <th scope="col">Channel</th>
       <th scope="col">URL</th>
@@ -27,6 +28,7 @@
     <tr>
       <th scope="row">{{ $i }}</th>
       <td>{{ $v.ID }}</td>
+      <td>{{ $v.Published.Format "2006-01-02" }}</td>
       <td>{{ $v.Title }}</td>
       <td>{{ $v.Channel.Name }}</td>
       <td><a href="{{ $v.URL }}">{{ $v.URL }}</a></td>
