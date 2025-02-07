@@ -72,6 +72,20 @@ func (w *WebYrs) listChannels(c *gin.Context) {
 	})
 }
 
+func (w *WebYrs) deleteChannel(c *gin.Context) {
+	ch := c.PostForm("channel")
+	log.Print("Deleting " + ch)
+	y := yrs.Yrs(*w)
+	err := y.DeleteChannel(ch)
+	var msg string
+	if err == nil {
+		msg = fmt.Sprintf("?error=%s", url.QueryEscape("Deleted channel "+ch))
+	} else {
+		msg = fmt.Sprintf("?error=%s", url.QueryEscape(err.Error()))
+	}
+	c.Redirect(303, buildUrl("/list-channels")+msg)
+}
+
 func (w *WebYrs) getVideos(vGetter func() ([]yrs.Video, error), n int) ([]yrs.Video, error) {
 	videos, err := vGetter()
 	if n != 0 && len(videos) > n {
@@ -211,6 +225,8 @@ func runWebServer(wy *WebYrs) *http.Server {
 	r.Static(buildUrl("/css/"), "css")
 
 	r.GET(buildUrl("/list-channels"), wy.listChannels)
+	r.POST(buildUrl("/delete-channel"), wy.deleteChannel)
+
 	r.GET(buildUrl("/list-videos"), wy.listVideos)
 	r.POST(buildUrl("/list-videos"), wy.listVideos)
 

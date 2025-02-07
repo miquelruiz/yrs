@@ -397,6 +397,12 @@ func (y *Yrs) GetVideosByChannel(ch string) ([]Video, error) {
 	return videos, nil
 }
 
+func (y *Yrs) DeleteChannel(ch string) error {
+	query := "DELETE FROM channels WHERE id=?"
+	_, err := y.db.Exec(query, ch)
+	return err
+}
+
 func parseDate(dateStr string) (time.Time, error) {
 	formats := []string{
 		time.RFC3339,

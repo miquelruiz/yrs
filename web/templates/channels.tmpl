@@ -17,6 +17,12 @@
       <td>{{ $c.ID }}</td>
       <td><a href="{{ $rootUrl }}/list-videos?channel={{ $c.Name }}">{{ $c.Name }}</a></td>
       <td><a href="{{ $c.URL }}">{{ $c.URL }}</a></td>
+      <td>
+        <form action="{{ $rootUrl}}/delete-channel" method="post">
+          <input type="hidden" name="channel" value="{{ $c.ID }}">
+          <input type="submit" value="Delete" />
+        </form>
+      </td>
     </tr>
   {{ end }}
   </tbody>
