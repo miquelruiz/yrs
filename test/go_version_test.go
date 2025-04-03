@@ -30,7 +30,7 @@ func parseDockerfile() (string, error) {
 }
 
 func parseGoMod() (string, error) {
-	return parse("../go.mod", `^go\s+(\d\.\d+)$`)
+	return parse("../go.mod", `^go\s+(\d\.\d+).\d+$`)
 }
 
 func parse(file, regex string) (string, error) {
